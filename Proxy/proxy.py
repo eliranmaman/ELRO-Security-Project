@@ -1,12 +1,19 @@
+from config import controller
+
+
 class Proxy(object):
 
-    def __init__(self, port, controller, logger=None):
+    _controller = controller
+
+    def __init__(self, port, logger=None):
         """
         :param port: The Proxy Port
         :param controller: The main controller of the ELRO system instance.
         :param logger: The desired logger for the proxy
         """
-        raise NotImplementedError()
+        self._port = port
+        self._running = False
+
 
     def start(self):
         """
