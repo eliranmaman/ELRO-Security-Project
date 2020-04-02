@@ -21,3 +21,9 @@ class Detector(object):
         :return: True in case of unwanted data otherwise False
         """
         raise NotImplementedError()
+
+    def get_black_list(self):
+        """
+        This method will return a dict with the black list words of the Detector.
+        :return: dict
+        """
