@@ -8,7 +8,7 @@ from config import log_dict
 
 hostname2 = "www.facebook.com"
 
-sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
+#sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(logging.ERROR)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

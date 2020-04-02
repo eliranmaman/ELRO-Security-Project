@@ -1,8 +1,8 @@
 debug = True
 if debug:
     server = {
-        "address": "127.0.0.1",
-        "port": 80
+        "address": "",
+        "port": 81
     }
 else:
     server = {

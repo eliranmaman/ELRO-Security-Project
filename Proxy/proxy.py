@@ -14,7 +14,6 @@ class Proxy(object):
         self._port = port
         self._running = False
 
-
     def start(self):
         """
         This method will start the proxy on the given port.
