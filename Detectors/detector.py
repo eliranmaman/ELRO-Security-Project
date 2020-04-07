@@ -28,3 +28,9 @@ class Detector(object):
         This method will return a dict with the forbidden list words of the Detector.
         :return: dict
         """
+
+    def refresh(self):
+        """
+        This function will refresh the detector resources, e.g: the forbidden words.
+        :return: None
+        """
