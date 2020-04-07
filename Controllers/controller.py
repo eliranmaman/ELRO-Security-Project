@@ -2,9 +2,10 @@
 
 class Controller(object):
 
-    def __init__(self):
-        self.__parser = None  # will work on the same threads.
-        self.__db = None  # will hold the Database connection.
+    def __init__(self, parser, detectors):
+        self._parser = None  # will work on the same threads.
+        self._detectors = dict()  # dict of detectors available for the Controller.
+        self._db = None  # will hold the Database connection.
         raise NotImplementedError()
 
     def activate(self, request):
