@@ -14,6 +14,7 @@ class Parser(object):
         """
         :param protocol: The type of the data that this parser can handle with.
         """
+        self.protocol = protocol
 
     def parse(self, data_to_parse):
         """
