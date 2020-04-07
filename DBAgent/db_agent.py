@@ -10,21 +10,25 @@ class DBHandler(object):
         This function will create the connection for the database.
         :return: Boolean
         """
+        raise NotImplementedError()
 
     def close(self):
         """
         This function will close the connection with the database.
         :return:
         """
+        raise NotImplementedError()
 
     def get_cursor(self):
         """
         This function will return cursor for active connection.
         :return: cursor
         """
+        raise NotImplementedError()
 
     def commit(self):
         """
         This function will do commit for active connection.
         :return:
         """
+        raise NotImplementedError()

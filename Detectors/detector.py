@@ -1,16 +1,7 @@
-import enum
+from Detectors import Sensitivity
 
 
 class Detector(object):
-
-    class Sensitivity(enum.Enum):
-        VerySensitive = 0.1
-        Sensitive = 0.2
-        Regular = 0.3
-
-    def __init__(self):
-        self.__forbidden = dict()
-        raise NotImplementedError()
 
     def detect(self, request, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
@@ -28,9 +19,11 @@ class Detector(object):
         This method will return a dict with the forbidden list words of the Detector.
         :return: dict
         """
+        raise NotImplementedError()
 
     def refresh(self):
         """
         This function will refresh the detector resources, e.g: the forbidden words.
         :return: None
         """
+        raise NotImplementedError()

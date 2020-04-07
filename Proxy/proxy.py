@@ -13,6 +13,7 @@ class Proxy(object):
         """
         self._port = port
         self._running = False
+        self._logger = logger
 
     def start(self):
         """

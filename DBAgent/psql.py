@@ -13,7 +13,6 @@ class PsqlHandler(DBHandler):
                                           port=self.__port, database=self.__database)
             print("Database is online..")
             print("\tCreating tables if not existing ...")
-            self.__create_tables()
             print("Done.")
         except (Exception, psycopg2.Error) as error:
             print("\tError while connecting to PostgreSQL", error)

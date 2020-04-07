@@ -14,12 +14,14 @@ class Controller(object):
         :param request: The request that arrived from the Proxy.
         :return: HTTP response
         """
+        raise NotImplementedError()
 
     def _parse(self):
         """
         This function will be responsible to activate the parser.
         :return: dict, with the parsed data.
         """
+        raise NotImplementedError()
 
     def _is_authorized(self, server_ip, requester_ip):
         """
@@ -29,6 +31,7 @@ class Controller(object):
         :param requester_ip: will hold the requester ip
         :return: Boolean (True for yes, False for no)
         """
+        raise NotImplementedError()
 
     def _list_of_detectors(self, server_ip):
         """
@@ -37,6 +40,7 @@ class Controller(object):
         :param server_ip: will hold the Server ip
         :return: list (of Detectors Enum)
         """
+        raise NotImplementedError()
 
     def _extra_data(self, server_ip):
         """
@@ -46,6 +50,7 @@ class Controller(object):
         :param server_ip: The server ip.
         :return: dict ('legitimate': list, 'forbidden': list)
         """
+        raise NotImplementedError()
 
     def _run_query(self, query):
         """
