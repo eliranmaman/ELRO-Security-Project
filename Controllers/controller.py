@@ -46,3 +46,16 @@ class Controller(object):
         :param server_ip: The server ip.
         :return: dict ('legitimate': list, 'forbidden': list)
         """
+
+    def _run_query(self, query):
+        """
+        This function will update the DB with new information (e.g: response detectors data)
+        :param update_query: Will hold a string of the query
+        :return: None
+        """
+        cursor = self._db.get_cursor()
+        try:
+            cursor.execute(query)
+        finally:
+            self._db.commit()
+            cursor.close()
