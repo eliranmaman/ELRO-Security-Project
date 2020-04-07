@@ -2,7 +2,7 @@ import logging
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
-from Proxy.proxy import Proxy
+from Proxy import Proxy
 from config import server
 from config import log_dict
 
