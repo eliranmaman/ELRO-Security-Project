@@ -1,5 +1,6 @@
 from enum import Enum
 from Detectors.detector import Detector
+from Detectors.sql_injection_detector import SqlInjection as SQLDetector
 
 
 class Sensitivity(Enum.enum):

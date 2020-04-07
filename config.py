@@ -12,3 +12,4 @@ else:
 log_dict = "logs/"
 controller = None
 db = None
+data_path = "Data/"
