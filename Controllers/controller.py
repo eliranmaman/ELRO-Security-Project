@@ -55,7 +55,7 @@ class Controller(object):
     def _run_query(self, query):
         """
         This function will update the DB with new information (e.g: response detectors data)
-        :param update_query: Will hold a string of the query
+        :param update: Will hold a string of the query
         :return: None
         """
         cursor = self._db.get_cursor()

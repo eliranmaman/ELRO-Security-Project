@@ -5,7 +5,7 @@ import requests
 from Proxy import Proxy
 from config import server
 from config import log_dict
-
+from Detectors import SQLDetector
 hostname2 = "www.facebook.com"
 
 #sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
@@ -48,16 +48,24 @@ class BasicProxy(Proxy):
                 print()
                 url = 'https://{}{}'.format(hostname2, self.path)
                 req_header = self.parse_headers()
-                if "MyHeaders" in self.headers:
-                    if self.headers["MyHeaders"] == str(2000):
-                        self.send_error(403, 'Access Denied, MyHeaders is 2000')
-                        return
-                    elif self.headers["MyHeaders"] == "Project405":
-                        self.send_error(200, 'Good value MyHeaders=' + self.headers["MyHeaders"])
-                        return
-                    else:
-                        self.send_error(500, 'W.T.F? why you give me MyHeaders=' + self.headers["MyHeaders"])
-                        return
+                sql = SQLDetector()
+                content_len = int(self.headers.get('Content-Length', 0))
+                data = str(self.rfile.read(content_len))[2:-1]
+                print(data)
+                data = sql.detect(data)
+                if data:
+                    self.send_error(403, 'Access Denied, MyHeaders is 2000')
+                    return
+                # if "MyHeaders" in self.headers:
+                #     if self.headers["MyHeaders"] == str(2000):
+                #         self.send_error(403, 'Access Denied, MyHeaders is 2000')
+                #         return
+                #     elif self.headers["MyHeaders"] == "Project405":
+                #         self.send_error(200, 'Good value MyHeaders=' + self.headers["MyHeaders"])
+                #         return
+                #     else:
+                #         self.send_error(500, 'W.T.F? why you give me MyHeaders=' + self.headers["MyHeaders"])
+                #         return
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 sent = True
                 self.send_response(resp.status_code)

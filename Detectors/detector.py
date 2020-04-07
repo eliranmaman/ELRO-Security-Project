@@ -1,4 +1,10 @@
-from Detectors import Sensitivity
+import enum
+
+
+class Sensitivity(enum.Enum):
+    VerySensitive = 0.1
+    Sensitive = 0.2
+    Regular = 0.3
 
 
 class Detector(object):
