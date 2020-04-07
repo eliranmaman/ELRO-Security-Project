@@ -9,6 +9,7 @@ class Detector(object):
         Regular = 0.3
 
     def __init__(self):
+        self.__forbidden = dict()
         raise NotImplementedError()
 
     def detect(self, request, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
@@ -22,8 +23,8 @@ class Detector(object):
         """
         raise NotImplementedError()
 
-    def get_black_list(self):
+    def get_forbidden_list(self):
         """
-        This method will return a dict with the black list words of the Detector.
+        This method will return a dict with the forbidden list words of the Detector.
         :return: dict
         """
