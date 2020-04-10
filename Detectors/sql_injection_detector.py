@@ -14,20 +14,25 @@ class SqlInjection(Detector):
         self.refresh()
 
     def detect(self, request, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
-        request = str(request)
+        # request = str(request).upper()
+        request = re.escape(request)
+        print(request)
         flags = []
+        print("Strart Regular")
         for data in self.__flag:
             matches = re.findall(data, request)
-            print(matches)
-            for ma in matches:
-                print(ma)
-        print("*****************")
+            if len(matches) > 0:
+                flags.append(matches)
         for data in self.__forbidden:
             matches = re.findall(data, request)
-            print(matches)
-            for ma in matches:
-                print(ma)
+            if len(matches) > 0:
+                flags.append(matches)
+        print(flags)
         print("*****************")
+        reg = re.compile(r'\\')
+        matches = re.findall(reg, request)
+        print(matches)
+        print("#########################")
         return False
 
     def get_forbidden_list(self):

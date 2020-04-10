@@ -8,7 +8,7 @@ from config import log_dict
 from Detectors import SQLDetector
 hostname2 = "www.facebook.com"
 
-#sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
+sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(logging.ERROR)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -45,14 +45,16 @@ class BasicProxy(Proxy):
         def do_GET(self, body=True):
             sent = False
             try:
-                print()
                 url = 'https://{}{}'.format(hostname2, self.path)
                 req_header = self.parse_headers()
                 sql = SQLDetector()
-                content_len = int(self.headers.get('Content-Length', 0))
-                data = str(self.rfile.read(content_len))[2:-1]
-                print(data)
+                # content_len = int(self.headers.get('Content-Length', 0))
+                # data = str(self.rfile.read(content_len))[2:-1]
+                print(self.path)
+                data = self.path
                 data = sql.detect(data)
+                if self.headers.get('hack', None) is not None:
+                    data = sql.detect(data)
                 if data:
                     self.send_error(403, 'Access Denied, MyHeaders is 2000')
                     return
@@ -83,9 +85,11 @@ class BasicProxy(Proxy):
             try:
                 url = 'https://{}{}'.format(hostname2, self.path)
                 content_len = int(self.headers.get('content-length', 0))
-                post_body = self.rfile.read(content_len)
+                post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-
+                sql=SQLDetector()
+                print(post_body)
+                sql.detect(post_body)
                 resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()),
                                      verify=False)
                 sent = True
