@@ -30,10 +30,11 @@ class CSRF(Detector):
                 return True
         # Getting the request Type (e.g same-origin)
         sec_fetch_site = request.headers.get('Sec-Fetch-Site', None)
-        # Sensitivity policy
-        method = str(request.method).upper()
+        # If the request is in the same-origin return False
         if sec_fetch_site == "same-origin":
             return False
+        # Sensitivity policy
+        method = str(request.method).upper()
         if sensitivity == Sensitivity.Regular:
             if method == "POST" or method == "DELETE" or method == "PUT":
                 return True
