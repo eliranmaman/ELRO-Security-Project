@@ -2,11 +2,13 @@ import logging
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
+
+from Detectors.csrf import CSRF
 from Proxy import Proxy
 from config import server
 from config import log_dict
 from Detectors import SQLDetector
-hostname2 = "www.facebook.com"
+hostname2 = "www.eliranm.co"
 
 sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
@@ -46,18 +48,23 @@ class BasicProxy(Proxy):
             sent = False
             try:
                 url = 'https://{}{}'.format(hostname2, self.path)
+                # content_len = int(self.headers.get('content-length', 0))
+                # post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                sql = SQLDetector()
+                print("CSRF detection")
+                detector = CSRF()
+                check = detector.detect(self)
+                # sql = SQLDetector()
                 # content_len = int(self.headers.get('Content-Length', 0))
                 # data = str(self.rfile.read(content_len))[2:-1]
-                print(self.path)
-                data = self.path
-                data = sql.detect(data)
-                if self.headers.get('hack', None) is not None:
-                    data = sql.detect(data)
-                if data:
-                    self.send_error(403, 'Access Denied, MyHeaders is 2000')
-                    return
+                # print(self.path)
+                # data = self.path
+                # data = sql.detect(data)
+                # if self.headers.get('hack', None) is not None:
+                #     data = sql.detect(data)
+                # if data:
+                #     self.send_error(403, 'Access Denied, MyHeaders is 2000')
+                #     return
                 # if "MyHeaders" in self.headers:
                 #     if self.headers["MyHeaders"] == str(2000):
                 #         self.send_error(403, 'Access Denied, MyHeaders is 2000')
@@ -68,13 +75,20 @@ class BasicProxy(Proxy):
                 #     else:
                 #         self.send_error(500, 'W.T.F? why you give me MyHeaders=' + self.headers["MyHeaders"])
                 #         return
+                print(req_header.get('referer', 'No'))
+                if check is True:
+                    req_header['Cookie'] = None
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 sent = True
+                if check is True:
+                    resp.headers['CSRF_TOKEN'] = "Got u"
                 self.send_response(resp.status_code)
                 self.send_resp_headers(resp)
                 if body:
                     self.wfile.write(resp.content)
                 return
+            except Exception as e:
+                print(e)
             finally:
                 self.finish()
                 if not sent:
@@ -87,11 +101,17 @@ class BasicProxy(Proxy):
                 content_len = int(self.headers.get('content-length', 0))
                 post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                sql=SQLDetector()
-                print(post_body)
-                sql.detect(post_body)
+                print("CSRF detection")
+                detector = CSRF()
+                check = detector.detect(self)
+                if check is True:
+                    req_header['Cookie'] = None
+                    req_header['CSRF_TOKEN'] = "Got u"
+                print(req_header.get('referer', 'No'))
                 resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()),
                                      verify=False)
+                if check is True:
+                    resp.headers['CSRF_TOKEN'] = "Got u"
                 sent = True
 
                 self.send_response(resp.status_code)
@@ -106,10 +126,8 @@ class BasicProxy(Proxy):
 
         def parse_headers(self):
             req_header = {}
-            for line in self.headers:
-                line_parts = [o.strip() for o in line.split(':', 1)]
-                if len(line_parts) == 2:
-                    req_header[line_parts[0]] = line_parts[1]
+            for key, value in self.headers.items():
+                req_header[key] = value
             return req_header
 
         def send_resp_headers(self, resp):

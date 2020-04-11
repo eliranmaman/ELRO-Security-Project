@@ -6,7 +6,7 @@ import re
 
 class SqlInjection(Detector):
 
-    __Forbidden_FILE = data_path+"/Detectors/SQLInjection/forbidden.json"
+    __Forbidden_FILE = data_path+"/Detectors/wwwww/forbidden.json"
 
     def __init__(self):
         self.__forbidden = list()
