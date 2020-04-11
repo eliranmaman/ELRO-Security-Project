@@ -47,7 +47,7 @@ class CSRF(Detector):
         return False
 
     def get_forbidden_list(self):
-        return []
+        return self._forbidden
 
     def refresh(self):
         return None
