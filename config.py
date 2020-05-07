@@ -2,7 +2,7 @@ debug = True
 if debug:
     server = {
         "address": "",
-        "port": 81
+        "port": 80
     }
 else:
     server = {
@@ -13,3 +13,4 @@ log_dict = "logs/"
 controller = None
 db = None
 data_path = "Data/"
+cookies_map = dict()

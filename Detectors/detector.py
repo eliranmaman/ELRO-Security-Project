@@ -7,11 +7,16 @@ class Sensitivity(enum.Enum):
     Regular = 0.3
 
 
+class Classification(enum.Enum):
+    Detected = 1
+    Clean = 2
+    NoConclusion = 3
+
+
 class Detector(object):
 
     def __init__(self):
         self._forbidden = []
-        raise NotImplementedError()
 
     def detect(self, request, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
@@ -37,3 +42,23 @@ class Detector(object):
         :return: None
         """
         raise NotImplementedError()
+
+    def _pre_processing(self, forbidden, legitimate, request):
+        # Setting the forbidden list
+        if forbidden is None:
+            forbidden = list()
+        forbidden += self.get_forbidden_list()
+        # Setting the legitimate list
+        if legitimate is None:
+            legitimate = list()
+        # Cleaning the request path
+        req_path = str(request.path).strip("/")
+        # Checking if the path is in the forbidden list of the server.
+        for path in forbidden:
+            if path in request.path:
+                return Classification.Detected
+        # Checking if the path is in the legitimate list of the server.
+        for path in legitimate:
+            if path == req_path:
+                return Classification.Clean
+        return Classification.NoConclusion

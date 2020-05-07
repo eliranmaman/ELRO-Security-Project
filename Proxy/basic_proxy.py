@@ -1,14 +1,21 @@
+import datetime
+import random
+import string
+from http import cookies
 import logging
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
+from config import cookies_map
 
+
+from Detectors.cookies_poisoning import CookiesPoisoning
 from Detectors.csrf import CSRF
 from Proxy import Proxy
 from config import server
 from config import log_dict
 from Detectors import SQLDetector
-hostname2 = "www.eliranm.co"
+hostname2 = "www.google.com"
 
 sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
@@ -51,37 +58,27 @@ class BasicProxy(Proxy):
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                print("CSRF detection")
-                detector = CSRF()
+                detector = CookiesPoisoning()
+                print("Detecting .....")
                 check = detector.detect(self)
-                # sql = SQLDetector()
-                # content_len = int(self.headers.get('Content-Length', 0))
-                # data = str(self.rfile.read(content_len))[2:-1]
-                # print(self.path)
-                # data = self.path
-                # data = sql.detect(data)
-                # if self.headers.get('hack', None) is not None:
-                #     data = sql.detect(data)
-                # if data:
-                #     self.send_error(403, 'Access Denied, MyHeaders is 2000')
-                #     return
-                # if "MyHeaders" in self.headers:
-                #     if self.headers["MyHeaders"] == str(2000):
-                #         self.send_error(403, 'Access Denied, MyHeaders is 2000')
-                #         return
-                #     elif self.headers["MyHeaders"] == "Project405":
-                #         self.send_error(200, 'Good value MyHeaders=' + self.headers["MyHeaders"])
-                #         return
-                #     else:
-                #         self.send_error(500, 'W.T.F? why you give me MyHeaders=' + self.headers["MyHeaders"])
-                #         return
-                print(req_header.get('referer', 'No'))
+                print("Finish .....")
                 if check is True:
+                    print("Busted, Communication is down!")
                     req_header['Cookie'] = None
+                else:
+                    print("verify completed, Welcome back {}".format(self.client_address))
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 sent = True
                 if check is True:
                     resp.headers['CSRF_TOKEN'] = "Got u"
+                if resp.cookies and not check:
+                    secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
+                    key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
+                    cookies_map[key] = secret_value
+                    cookie = cookies.SimpleCookie()
+                    cookie['Elro-Sec-Token'] = secret_value
+                    cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
+                    resp.headers["Set-Cookie"] = cookie
                 self.send_response(resp.status_code)
                 self.send_resp_headers(resp)
                 if body:
@@ -101,11 +98,10 @@ class BasicProxy(Proxy):
                 content_len = int(self.headers.get('content-length', 0))
                 post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                print("CSRF detection")
-                detector = CSRF()
+                detector = CookiesPoisoning()
                 check = detector.detect(self)
                 if check is True:
-                    req_header['Cookie'] = None
+                    req_header['Cookie'] = {"Hello": "World"}
                     req_header['CSRF_TOKEN'] = "Got u"
                 print(req_header.get('referer', 'No'))
                 resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()),
