@@ -9,6 +9,10 @@ class Sensitivity(enum.Enum):
 
 class Detector(object):
 
+    def __init__(self):
+        self._forbidden = []
+        raise NotImplementedError()
+
     def detect(self, request, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
         This method will apply the detector scans on the request and return
