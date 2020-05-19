@@ -14,7 +14,8 @@ from Detectors.csrf import CSRF
 from Proxy import Proxy
 from config import server
 from config import log_dict
-from Detectors import SQLDetector
+from Detectors import SQLDetector, BruteForce
+
 hostname2 = "www.google.com"
 
 sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
@@ -58,27 +59,27 @@ class BasicProxy(Proxy):
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                detector = CookiesPoisoning()
+                detector = BruteForce()
                 print("Detecting .....")
                 check = detector.detect(self)
-                print("Finish .....")
+                # print("Finish .....")
                 if check is True:
                     print("Busted, Communication is down!")
                     req_header['Cookie'] = None
-                else:
-                    print("verify completed, Welcome back {}".format(self.client_address))
+                # else:
+                #     print("verify completed, Welcome back {}".format(self.client_address))
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 sent = True
                 if check is True:
                     resp.headers['CSRF_TOKEN'] = "Got u"
-                if resp.cookies and not check:
-                    secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
-                    key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
-                    cookies_map[key] = secret_value
-                    cookie = cookies.SimpleCookie()
-                    cookie['Elro-Sec-Token'] = secret_value
-                    cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
-                    resp.headers["Set-Cookie"] = cookie
+                # if resp.cookies and not check:
+                    # secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
+                    # key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
+                    # cookies_map[key] = secret_value
+                    # cookie = cookies.SimpleCookie()
+                    # cookie['Elro-Sec-Token'] = secret_value
+                    # cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
+                    # resp.headers["Set-Cookie"] = cookie
                 self.send_response(resp.status_code)
                 self.send_resp_headers(resp)
                 if body:
@@ -98,15 +99,16 @@ class BasicProxy(Proxy):
                 content_len = int(self.headers.get('content-length', 0))
                 post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                detector = CookiesPoisoning()
+                detector = BruteForce()
                 check = detector.detect(self)
-                if check is True:
-                    req_header['Cookie'] = {"Hello": "World"}
-                    req_header['CSRF_TOKEN'] = "Got u"
-                print(req_header.get('referer', 'No'))
+                if check:
+                    print("Busted...")
+                else:
+                    print("Not yet...")
+                # print(req_header.get('referer', 'No'))
                 resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()),
                                      verify=False)
-                if check is True:
+                if check:
                     resp.headers['CSRF_TOKEN'] = "Got u"
                 sent = True
 

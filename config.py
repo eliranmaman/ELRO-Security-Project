@@ -14,3 +14,4 @@ controller = None
 db = None
 data_path = "Data/"
 cookies_map = dict()
+brute_force_map = dict()

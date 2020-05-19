@@ -44,6 +44,14 @@ class Detector(object):
         raise NotImplementedError()
 
     def _pre_processing(self, forbidden, legitimate, request):
+        """
+        This method is to prevent duplicate code (each detector implement this code eventually)
+        The method perform check on the legitimate & forbidden lists.
+        :param forbidden: the forbidden list
+        :param legitimate: the legitimate list
+        :param request: the request
+        :return: Classification (Enum)
+        """
         # Setting the forbidden list
         if forbidden is None:
             forbidden = list()
@@ -51,14 +59,28 @@ class Detector(object):
         # Setting the legitimate list
         if legitimate is None:
             legitimate = list()
-        # Cleaning the request path
-        req_path = str(request.path).strip("/")
-        # Checking if the path is in the forbidden list of the server.
-        for path in forbidden:
-            if path in request.path:
-                return Classification.Detected
-        # Checking if the path is in the legitimate list of the server.
-        for path in legitimate:
-            if path == req_path:
-                return Classification.Clean
-        return Classification.NoConclusion
+        # Checking if the request is in the forbidden list of the server.
+        is_forbidden = self._is_forbidden(forbidden, request)
+        if is_forbidden == Classification.Detected:
+            return Classification.Detected
+        # Checking if the request is in the legitimate list of the server.
+        is_legitimate = self._is_legitimate(legitimate, request)
+        return is_legitimate
+
+    def _is_forbidden(self, forbidden, request):
+        """
+        The above method will perform a case check, if it is found that the request has been identified as belonging
+         to the forbidden list, the method will classifies if its Detected or No conclusion.
+        :param request: the request
+        :return: Classification (Enum)
+        """
+        raise NotImplementedError()
+
+    def _is_legitimate(self, legitimate, request):
+        """
+        The above method will perform a case check, if it is found that the request has been identified as belonging
+         to the legitimate list, the method will classifies if its Clean or No conclusion
+        :param request: the request
+        :return: Classification (Enum)
+        """
+        raise NotImplementedError()
