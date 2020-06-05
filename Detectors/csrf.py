@@ -1,5 +1,6 @@
 from Detectors import Detector, Sensitivity, Classification
 
+# TODO: implement the is_legitimate & is_forbidden
 
 class CSRF(Detector):
 
@@ -20,7 +21,7 @@ class CSRF(Detector):
         # Getting the request Type (e.g same-origin)
         sec_fetch_site = request.headers.get('Sec-Fetch-Site', None)
         # If the request is in the same-origin return False
-        if sec_fetch_site == "same-origin":
+        if sec_fetch_site == "same-origin":  # TODO: check if the attacker can change this header
             return False
         # Sensitivity policy
         method = str(request.method).upper()

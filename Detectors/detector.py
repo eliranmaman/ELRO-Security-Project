@@ -1,5 +1,8 @@
 import enum
 
+# TODO: check if the leggite or the forbidden need to run first in the _pre_processing method. (another reason is the
+#       is the fact that forbidden word can be legit.
+
 
 class Sensitivity(enum.Enum):
     VerySensitive = 0.1
