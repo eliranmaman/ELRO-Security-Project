@@ -27,7 +27,6 @@ class CookiesPoisoning(Detector):
         # Getting the request Cookies (e.g same-origin)
         return self._check_cookie_is_authorized(request)
 
-
     def _check_cookie_is_authorized(self, request):
         """
         To do (Generate the key in the proxy for verifying)
@@ -45,6 +44,15 @@ class CookiesPoisoning(Detector):
         key = self.generate_key(request.client_address[0], request.headers.get('Host', "elro-sec.com"))
         check = cookies_map.get(key, None) != "{}@Elro-Sec-End".format(secret_value) # TODO: thsi is not readable.
         return check
+
+    def _is_forbidden(self, forbidden, request):
+        return Classification.NoConclusion
+
+    def _is_legitimate(self, legitimate, request):
+        req_ip = str(request.client_address[0])
+        if req_ip in legitimate:
+            return Classification.Clean
+        return Classification.NoConclusion
 
     def get_forbidden_list(self):
         return self._forbidden
