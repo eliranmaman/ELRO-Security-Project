@@ -1,6 +1,7 @@
 from Detectors import Detector, Sensitivity, Classification
 
-# TODO: implement the is_legitimate & is_forbidden
+# TODO: tests
+
 
 class CSRF(Detector):
 

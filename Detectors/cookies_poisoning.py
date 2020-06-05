@@ -3,7 +3,8 @@ import re
 from Detectors import Detector, Sensitivity, Classification
 from config import cookies_map
 
-# TODO: implement the is_legitimate & is_forbidden
+# TODO: tests
+
 
 class CookiesPoisoning(Detector):
 

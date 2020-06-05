@@ -5,6 +5,8 @@ import json
 from Detectors import Detector, Sensitivity, Classification
 from config import BOT_KEY, BOTS_URL
 
+# TODO: tests
+
 
 class Bots(Detector):
 
