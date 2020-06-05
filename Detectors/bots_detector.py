@@ -80,12 +80,6 @@ class Bots(Detector):
             "is_abusive": bots_response.get("is_abusive", False)
         }
 
-    def _is_forbidden(self, forbidden, request):
-        """
-        Nothing to check here.
-        """
-        return Classification.NoConclusion
-
     def _is_legitimate(self, legitimate, request):
         """
         This method is work on path access only.

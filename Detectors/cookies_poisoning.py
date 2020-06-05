@@ -45,10 +45,14 @@ class CookiesPoisoning(Detector):
         check = cookies_map.get(key, None) != "{}@Elro-Sec-End".format(secret_value) # TODO: thsi is not readable.
         return check
 
-    def _is_forbidden(self, forbidden, request):
-        return Classification.NoConclusion
-
     def _is_legitimate(self, legitimate, request):
+        """
+        The method works on IP access control, there is legit ips that allowed to
+        access without token.
+        :param legitimate: list of ips
+        :param request: The original request
+        :return: Classification Enum
+        """
         req_ip = str(request.client_address[0])
         if req_ip in legitimate:
             return Classification.Clean
