@@ -35,6 +35,17 @@ class CSRF(Detector):
             return True
         return False
 
+    def _is_forbidden(self, forbidden, request):
+        return Classification.NoConclusion
+
+    def _is_legitimate(self, legitimate, request):
+        # Cleaning the request path
+        req_path = str(request.path).strip("/")
+        for path in legitimate:
+            if req_path in path:
+                return Classification.Clean
+        return Classification.NoConclusion
+
     def get_forbidden_list(self):
         return self._forbidden
 

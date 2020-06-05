@@ -15,3 +15,5 @@ db = None
 data_path = "Data/"
 cookies_map = dict()
 brute_force_map = dict()
+BOT_KEY = "f0ec0b2f185b868ac2f20988011328ec"
+BOTS_URL = "https://api.whatismybrowser.com/api/v2/"
