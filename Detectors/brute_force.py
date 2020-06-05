@@ -35,7 +35,7 @@ class BruteForce(Detector):
         last_request, counter = self._get_previous_request_info(client_ip, req_path)
         # Sensitivity will determinate the max_counter.
         if sensitivity == Sensitivity.Regular:
-            max_counter = 10
+            max_counter = 10  # TODO: discuss about the const numbers.
         elif sensitivity == Sensitivity.Sensitive:
             max_counter = 5
         elif sensitivity == Sensitivity.VerySensitive:
@@ -43,7 +43,7 @@ class BruteForce(Detector):
         else:
             max_counter = 3
         # Check if the last request was more that 1min ago
-        if time.time() - last_request > 60:
+        if time.time() - last_request > 60:  # TODO: discuss about the const 1min.
             self._data_map[client_ip][req_path] = (time.time(), 1)
             return False
         elif counter >= max_counter:

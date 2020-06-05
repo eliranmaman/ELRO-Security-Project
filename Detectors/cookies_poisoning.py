@@ -3,6 +3,7 @@ import re
 from Detectors import Detector, Sensitivity, Classification
 from config import cookies_map
 
+# TODO: implement the is_legitimate & is_forbidden
 
 class CookiesPoisoning(Detector):
 
@@ -36,16 +37,13 @@ class CookiesPoisoning(Detector):
         """
         cookies = request.headers.get('Cookie', None)
         if cookies is None:
-            print("Not found cookies.... ")
             return False
         m = re.match(".*?Elro-Sec-Token=.*\"(.*?)@Elro-Sec-End", cookies)
         if m is None:
-            print("Not found key.... ")
             return True
         secret_value = m.group(1)
         key = self.generate_key(request.client_address[0], request.headers.get('Host', "elro-sec.com"))
-        check = cookies_map.get(key, None) != "{}@Elro-Sec-End".format(secret_value)
-        print("Pair is: {}".format(check))
+        check = cookies_map.get(key, None) != "{}@Elro-Sec-End".format(secret_value) # TODO: thsi is not readable.
         return check
 
     def get_forbidden_list(self):
