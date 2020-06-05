@@ -14,7 +14,7 @@ from Detectors.csrf import CSRF
 from Proxy import Proxy
 from config import server
 from config import log_dict
-from Detectors import SQLDetector, BruteForce, BotsDetector
+from Detectors import SQLDetector, BruteForce, BotsDetector, ProxyDetector
 
 hostname2 = "www.google.com"
 
@@ -59,7 +59,7 @@ class BasicProxy(Proxy):
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                detector = BotsDetector()
+                detector = ProxyDetector()
                 print("Detecting .....")
                 check = detector.detect(self)
                 # print("Finish .....")
