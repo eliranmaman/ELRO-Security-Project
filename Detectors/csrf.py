@@ -1,6 +1,7 @@
 from Detectors import Detector, Sensitivity, Classification
 
-# TODO: implement the is_legitimate & is_forbidden
+# TODO: tests
+
 
 class CSRF(Detector):
 
@@ -34,6 +35,21 @@ class CSRF(Detector):
         else:  # Sensitivity.VerySensitive
             return True
         return False
+
+    def _is_legitimate(self, legitimate, request):
+        """
+        The method works on path access control, there is legit path that allowed to
+        access with CSRF request.
+        :param legitimate: list of path
+        :param request: The original request
+        :return: Classification Enum
+        """
+        # Cleaning the request path
+        req_path = str(request.path).strip("/")
+        for path in legitimate:
+            if req_path in path:
+                return Classification.Clean
+        return Classification.NoConclusion
 
     def get_forbidden_list(self):
         return self._forbidden

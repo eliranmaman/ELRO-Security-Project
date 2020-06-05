@@ -25,10 +25,10 @@ class BruteForce(Detector):
         """
         # Pre Processing
         check_pre_processing = self._pre_processing(forbidden, legitimate, request)
-        if check_pre_processing == Classification.NoConclusion:
+        if check_pre_processing == Classification.Clean:
             return False
-        elif check_pre_processing == Classification.Clean:
-            return False
+        elif check_pre_processing == Classification.Detected:
+            return True
         # ------ This code will run if the path is in the forbidden list ------ #
         req_path = str(request.path).strip("/")
         client_ip = request.client_address[0]
@@ -47,10 +47,10 @@ class BruteForce(Detector):
             self._data_map[client_ip][req_path] = (time.time(), 1)
             return False
         elif counter >= max_counter:
-            self._data_map[client_ip][req_path] = (time.time(), counter+1)
+            self._data_map[client_ip][req_path] = (time.time(), counter + 1)
             return True
         # --- The counter is < max_counter --- #
-        self._data_map[client_ip][req_path] = (time.time(), counter+1)
+        self._data_map[client_ip][req_path] = (time.time(), counter + 1)
         return False
 
     def _get_previous_request_info(self, ip, path):
@@ -62,14 +62,34 @@ class BruteForce(Detector):
             return self._data_map[ip][path]
 
     def _is_forbidden(self, forbidden, request):
-        # Cleaning the request path
-        req_path = str(request.path).strip("/")
-        for path in forbidden:
-            if req_path in path:
-                return Classification.Detected
-        return Classification.Clean
+        """
+        The forbidden works on ip black list.
+        :param forbidden: list of ips.
+        :param request: the original request
+        :return: Classification Enum
+        """
+        req_ip = str(request.client_address[0])
+        for req_ip in forbidden:
+            return Classification.Detected
+        return Classification.NoConclusion
 
     def _is_legitimate(self, legitimate, request):
+        """
+        The method relay on ip+path access control, for ip that have non limited
+        access we put only ip.
+        The format is: IP<=>PATH (e.g 127.0.0.1<=>controller.html)
+        :param legitimate: list of path & ips in this format IP<=>PATH or just IP for unlimited access
+        :param request: the original request
+        :return: Classification Enum
+        """
+        req_path = str(request.path).strip("/")
+        req_ip = str(request.client_address[0])
+        request_data = "{}<=>{}".format(req_ip, req_path)
+        if request_data in legitimate:
+            return Classification.Clean
+        # For case that the ip has access for all the server path its will be ip only.
+        if req_ip in legitimate:
+            return Classification.Clean
         return Classification.NoConclusion
 
     def get_forbidden_list(self):
@@ -78,7 +98,3 @@ class BruteForce(Detector):
     def refresh(self):
         # TODO: implement the refresh data from Database.
         return None
-
-
-
-

@@ -63,12 +63,13 @@ class Detector(object):
         if legitimate is None:
             legitimate = list()
         # Checking if the request is in the forbidden list of the server.
+        is_legitimate = self._is_legitimate(legitimate, request)
+        if is_legitimate == Classification.Clean:
+            return Classification.Clean
         is_forbidden = self._is_forbidden(forbidden, request)
         if is_forbidden == Classification.Detected:
             return Classification.Detected
-        # Checking if the request is in the legitimate list of the server.
-        is_legitimate = self._is_legitimate(legitimate, request)
-        return is_legitimate
+        return Classification.NoConclusion
 
     def _is_forbidden(self, forbidden, request):
         """
@@ -77,7 +78,7 @@ class Detector(object):
         :param request: the request
         :return: Classification (Enum)
         """
-        raise NotImplementedError()
+        return Classification.NoConclusion
 
     def _is_legitimate(self, legitimate, request):
         """
@@ -86,4 +87,4 @@ class Detector(object):
         :param request: the request
         :return: Classification (Enum)
         """
-        raise NotImplementedError()
+        return Classification.NoConclusion
