@@ -35,10 +35,14 @@ class CSRF(Detector):
             return True
         return False
 
-    def _is_forbidden(self, forbidden, request):
-        return Classification.NoConclusion
-
     def _is_legitimate(self, legitimate, request):
+        """
+        The method works on path access control, there is legit path that allowed to
+        access with CSRF request.
+        :param legitimate: list of path
+        :param request: The original request
+        :return: Classification Enum
+        """
         # Cleaning the request path
         req_path = str(request.path).strip("/")
         for path in legitimate:

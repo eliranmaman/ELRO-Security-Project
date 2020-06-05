@@ -78,7 +78,7 @@ class Detector(object):
         :param request: the request
         :return: Classification (Enum)
         """
-        raise NotImplementedError()
+        return Classification.NoConclusion
 
     def _is_legitimate(self, legitimate, request):
         """
@@ -87,4 +87,4 @@ class Detector(object):
         :param request: the request
         :return: Classification (Enum)
         """
-        raise NotImplementedError()
+        return Classification.NoConclusion
