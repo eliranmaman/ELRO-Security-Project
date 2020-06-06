@@ -1,0 +1,16 @@
+{
+    "regex_list": [
+      {"phrase": "SELECT(\\s|%20).*FROM(\\s|%20).*WHERE(\\s|%20).*","value": 0.1},
+      {"phrase": "(\\%27)|(\\')|(\\-\\-)|(\\%23)|(#)","value": 0.2},
+      {"phrase": "/((\\%3D)|(=))[^\\n]*((\\%27)|(\\')|(\\-\\-)|(\\%3B)|(;))/i","value": 0.7},
+      {"phrase": "/\\w*((\\%27))((\\%6F)|o|(\\%4F))((\\%72)|r|(\\%52))/ix","value": 0.7},
+      {"phrase": "/exec((\\s|%20)|\\+)+(s|x)p\\w+/ix","value": 0.7},
+      {"phrase": "/((\\%27)|(\\'))union/ix","value": 0.5},
+      {"phrase": "(\\b(ALTER|CREATE|DELETE|DROP|EXEC(UTE){0,1}|INSERT( +INTO){0,1}|MERGE|SELECT|UPDATE|UNION( +ALL){0,1})\\b)","value": 0.1},
+      {"phrase": "(;)","value": 0.1},
+      {"phrase": "(--)","value": 0.1},
+      {"phrase": "(('|\")(\\s|%20)*OR(\\s|%20)*1(\\s|%20)*=(\\s|%20)*1)","value": 0.7},
+      {"phrase": "(OR(\\s|%20)*1(\\s|%20)*=(\\s|%20)*1)","value": 0.1},
+      {"phrase": "SELECT(\\s|%20)*\\*","value": 0.3}
+    ]
+}

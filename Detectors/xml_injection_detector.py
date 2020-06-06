@@ -14,28 +14,14 @@ class XMLDetector(Detector):
         self.refresh()
 
     def detect(self, request, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
-        try:
-            request = str(request)
-            for data in self.__forbidden:
-                print("searching for: '"+data + "' in the request")
-                matches = re.findall(data, request)
-                print(matches)
-                if len(matches) > 0:
-                    return True
-                # for ma in matches:
-                #     print(ma)
-            for data in self.__flag:
-                matches = re.findall(data, request)
-                print(matches)
-                for ma in matches:
-                    print("dangerous:=> {}".format(ma))
-            print("*****************")
-            print("req is: ->>" + request)
-            print("*****************")
-            return False
-        except Exception as e:
-            print("Exception Error with string conversion")
-            print(e)
+        request = str(request)
+        for malicous_phrase in self.__forbidden:
+            matches = re.findall(malicous_phrase, request)
+            if len(matches) > 0:
+                return True
+
+        return False
+
 
     def get_forbidden_list(self):
         return self.__forbidden

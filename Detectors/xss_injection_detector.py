@@ -4,8 +4,8 @@ from config import data_path
 import re
 
 
-class SqlInjection(Detector):
-    __Forbidden_FILE = data_path+"/Detectors/SQLInjection/forbidden.json"
+class XSSDetector(Detector):
+    __Forbidden_FILE = data_path+"/Detectors/XSSDetector/forbidden.json"
 
     def __init__(self):
         self.__forbidden = list()

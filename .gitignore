@@ -1,0 +1,7 @@
+**/.idea
+**/__pycache__
+run_test_proxy.py
+test.py
+venv
+logs
+Proxy/basic_test_proxy_royi.py
