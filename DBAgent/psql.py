@@ -2,7 +2,7 @@ import psycopg2
 from DBAgent import DBHandler
 
 
-class PsqlHandler(DBHandler):
+class PSQLHandler(DBHandler):
 
     def __init__(self, user, password, host, port, database):
         super().__init__(user, password, host, port, database)
@@ -26,4 +26,5 @@ class PsqlHandler(DBHandler):
     def get_cursor(self):
         return self.__connection.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-
+    def commit(self):
+        self.__connection.commit()
