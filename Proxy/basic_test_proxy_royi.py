@@ -1,17 +1,17 @@
 import logging
 import sys
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
+import re
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from Proxy import Proxy
 from config import server
-import urllib.parse
 
 
 from config import log_dict
-from Detectors import SQLDetector
-from Detectors.xml_injection_detector import XMLDetector
-hostname2 = "www.facebook.com"
+from Detectors import SQLDetector, SQLValidator, XMLDetector, Sensitivity
 
+hostname2 = "www.facebook.com"
+SQL_THRESHOLD = 0.5
 sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(logging.ERROR)
@@ -19,7 +19,7 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 
 
-class BasicProxy(Proxy):
+class BasicTestProxyRoyi(Proxy):
     def __init__(self, port, logger=None):
         super().__init__(port, logger)
         self._httpd = None
@@ -28,7 +28,7 @@ class BasicProxy(Proxy):
         if not self._running:
             self._running = True
             server_address = (server["address"], self._port)
-            self._httpd = HTTPServer(server_address, BasicProxy.RequestHandler)
+            self._httpd = HTTPServer(server_address, BasicTestProxyRoyi.RequestHandler)
             print('Proxy is alive: \n\tPort: {}\n\tAddress: {}'.format(self._port, server["address"]))
             self._httpd.serve_forever()  # should be in another Thread.
         else:
@@ -77,16 +77,6 @@ class BasicProxy(Proxy):
                     self.send_error(403, 'Access Denied, XML ATTACK DETECTED!')
                     return
 
-                # if "MyHeaders" in self.headers:
-                #     if self.headers["MyHeaders"] == str(2000):
-                #         self.send_error(403, 'Access Denied, MyHeaders is 2000')
-                #         return
-                #     elif self.headers["MyHeaders"] == "Project405":
-                #         self.send_error(200, 'Good value MyHeaders=' + self.headers["MyHeaders"])
-                #         return
-                #     else:
-                #         self.send_error(500, 'W.T.F? why you give me MyHeaders=' + self.headers["MyHeaders"])
-                #         return
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 sent = True
                 self.send_response(resp.status_code)
@@ -108,7 +98,37 @@ class BasicProxy(Proxy):
                 content_len = int(self.headers.get('content-length', 0))
                 post_body = self.rfile.read(content_len)
                 req_header = self.parse_headers()
+                sql_det = SQLDetector()
+                sql_validator = SQLValidator()
+                headers = self.headers
+                params = self.path
+                body = str(post_body)[2:-1]
+                malicious_headers = sql_det.detect(headers, sensitivity=Sensitivity.Sensitive)
+                to_block = malicious_headers
+                if to_block:
+                    print("sql attack detected in the headers!!")
+                    self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
+                    return
+                malicious_body = sql_det.detect(body)
+                to_block = malicious_body
+                if to_block:
+                    assurance_percent = sql_validator.validate(body)
+                    print('total', assurance_percent)
+                    if assurance_percent >= SQL_THRESHOLD:
+                        print(assurance_percent)
+                        print("sql attack detected in the body!!")
+                        self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
+                        return
+                    else:
+                        post_body = re.escape(post_body)
+                        print("sending escaped body\n", post_body)
 
+                malicious_params = sql_det.detect(params, sensitivity=Sensitivity.Sensitive)
+                to_block = malicious_params
+                if to_block:
+                    print("sql attack detected in the params!!")
+                    self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
+                    return
                 resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()),
                                      verify=False)
                 sent = True
@@ -122,6 +142,8 @@ class BasicProxy(Proxy):
                 self.finish()
                 if not sent:
                     self.send_error(404, 'error trying to proxy')
+
+        # def detect_sql_injection(self, content):
 
         def parse_headers(self):
             req_header = {}
