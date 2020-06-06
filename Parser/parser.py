@@ -11,15 +11,28 @@ class Parser(object):
         """
         This method will parse the data.
         :data: the request / response
+        :method: the request / response method (e.g GET)
         :data_type: Enum of DataType to identify.
         :return: Dict
         """
         raise NotImplementedError()
 
     def _parse_request(self, data, method):
+        """
+        This method will parse requests.
+        :param data: The request
+        :param method: The request method (e.g GET)
+        :return: dict
+        """
         raise NotImplementedError()
 
     def _parse_response(self, data):
+        """
+        This method will parse response.
+        :param data: The request
+        :return: dict
+        :return: dict
+        """
         raise NotImplementedError()
 
 
@@ -29,11 +42,6 @@ class BaseHTTPRequestParser(Parser):
         pass
 
     def parse(self, data, data_type, method):
-        """
-        :param data:
-        :param data_type:
-        :return:
-        """
         return self._parse_request(data, method)
 
     def _parse_request(self, data, method):
