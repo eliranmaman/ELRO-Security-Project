@@ -42,4 +42,7 @@ class BaseHTTPRequestParser(Parser):
         parsed_data["headers"] = data.headers
         parsed_data["method"] = "{}".format(method).upper()
         parsed_data["path"] = "{}".format(data.path)
+        parsed_data["Content-Length"] = int(data.headers.get('Content-Length', 0))
+        parsed_data["body"] = data.rfile.read(parsed_data["Content-Length"])
+        parsed_data["rfile"] = data.rfile
         return parsed_data
