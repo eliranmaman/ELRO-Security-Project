@@ -16,23 +16,23 @@ class Bots(Detector):
         self._bots_header = {"X-API-KEY": BOT_KEY}
         self._bots_data = {"parse_options": {}}
 
-    def detect(self, request, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
+    def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
         Just to be clear: there is not absolute way to determine if request arrive from legit user or not.
         We can just look for the "sloppy" guys, by checking the User-Agent.
         This method will determine if the request arrive from bot or not.
-        :param request: send the full request object.
+        :param parsed_data: Parsed Data (from the parser module) of the request / response
         :param sensitivity: The sensitivity of the detecting
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
         """
         # Pre Processing
-        check_pre_processing = self._pre_processing(forbidden, legitimate, request)
+        check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
             return False
         # ------ This code will run if the path is in the forbidden list ------ #
-        user_agent = request.headers.get('User-Agent', None)
+        user_agent = parsed_data["headers"].get('User-Agent', None)
         if user_agent is None:
             return True
         self._bots_data["user_agent"] = user_agent
@@ -82,15 +82,15 @@ class Bots(Detector):
             "is_abusive": bots_response.get("is_abusive", False)
         }
 
-    def _is_legitimate(self, legitimate, request):
+    def _is_legitimate(self, legitimate, parsed_data):
         """
         This method is work on path access only.
         :param legitimate: list of legitimate path, that bots are allowed to visit.
-        :param request: the original request.
+        :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return: Classification Enum
         """
         # Cleaning the request path
-        req_path = str(request.path).strip("/")
+        req_path = parsed_data["path"].strip("/")
         for path in legitimate:
             if req_path in path:
                 return Classification.Clean

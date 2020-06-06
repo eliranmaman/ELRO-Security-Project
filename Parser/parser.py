@@ -3,22 +3,39 @@ import enum
 
 class Parser(object):
 
-    class Protocol(enum.Enum):
-        HTTP_req = "http_request"
-        HTTP_res = "http_response"
-        HTTPS_req = "https_request"
-        HTTPS_res = "https_response"
-        FTP = "ftp"
+    class DataType(enum.Enum):
+        Request = 1,
+        Response = 2
 
-    def __init__(self, protocol=Protocol.HTTP_req):
-        """
-        :param protocol: The type of the data that this parser can handle with.
-        """
-        self.protocol = protocol
-
-    def parse(self, data_to_parse):
+    def parse(self, data, data_type):
         """
         This method will parse the data.
-        :return: a dict of the parsed data
+        :data: the request / response
+        :data_type: Enum of DataType to identify.
+        :return: Dict
         """
         raise NotImplementedError()
+
+    def _parse_request(self, data):
+        raise NotImplementedError()
+
+    def _parse_response(self, data):
+        raise NotImplementedError()
+
+
+class BaseHTTPRequestParser(Parser):
+
+    def parse(self, data, data_type):
+        """
+        :param data:
+        :param data_type:
+        :return:
+        """
+        parsed_data = dict()
+
+    def _parse_request(self, data):
+        parsed_data = dict()
+        parsed_data["client_ip"] = data.client_address[0]
+        parsed_data["headers"] = data.headers
+        parsed_data["method"] = "{}".format(data.method).upper()
+        parsed_data["path"] = "{}".format(data.path)
