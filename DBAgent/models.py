@@ -2,6 +2,7 @@ import json
 
 from psycopg2 import sql
 
+# TODO: idea - chhange the execute to be in the DBagent class.
 
 class Items(object):
 
