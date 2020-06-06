@@ -7,7 +7,7 @@ class Parser(object):
         Request = 1,
         Response = 2
 
-    def parse(self, data, data_type):
+    def parse(self, data, data_type, method):
         """
         This method will parse the data.
         :data: the request / response
@@ -16,7 +16,7 @@ class Parser(object):
         """
         raise NotImplementedError()
 
-    def _parse_request(self, data):
+    def _parse_request(self, data, method):
         raise NotImplementedError()
 
     def _parse_response(self, data):
@@ -25,17 +25,21 @@ class Parser(object):
 
 class BaseHTTPRequestParser(Parser):
 
-    def parse(self, data, data_type):
+    def _parse_response(self, data):
+        pass
+
+    def parse(self, data, data_type, method):
         """
         :param data:
         :param data_type:
         :return:
         """
-        parsed_data = dict()
+        return self._parse_request(data, method)
 
-    def _parse_request(self, data):
+    def _parse_request(self, data, method):
         parsed_data = dict()
         parsed_data["client_ip"] = data.client_address[0]
         parsed_data["headers"] = data.headers
-        parsed_data["method"] = "{}".format(data.method).upper()
+        parsed_data["method"] = "{}".format(method).upper()
         parsed_data["path"] = "{}".format(data.path)
+        return parsed_data

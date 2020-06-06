@@ -7,7 +7,7 @@ import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 from config import cookies_map
-
+from Parser import BaseHTTPRequestParser, Parser
 
 from Detectors.cookies_poisoning import CookiesPoisoning
 from Detectors.csrf import CSRF
@@ -59,9 +59,12 @@ class BasicProxy(Proxy):
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                detector = ProxyDetector()
+                detector = BruteForce()
+                parser = BaseHTTPRequestParser()
+                print("Parsing")
+                parsed_data = parser.parse(self, Parser.DataType.Request, "GET")
                 print("Detecting .....")
-                check = detector.detect(self)
+                check = detector.detect(parsed_data)
                 # print("Finish .....")
                 if check is True:
                     print("Busted, Communication is down!")
