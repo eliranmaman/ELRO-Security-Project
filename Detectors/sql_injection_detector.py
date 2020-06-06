@@ -7,6 +7,8 @@ import re
 class SqlInjection(Detector):
     """"this class is responsible to detect whether a string contains an sql injection
         payload or not"""
+    # TODO: adjust usage with legitimate and forbidden list - will we receive regex ?
+    #  or only words? (especially in the legit list) - need to think on solution
 
     __Forbidden_FILE = data_path+"/Detectors/SQLInjection/forbidden.json"
 

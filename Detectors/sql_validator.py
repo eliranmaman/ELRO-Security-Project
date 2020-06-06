@@ -6,16 +6,20 @@ from config import data_path
 class SQLValidator(object):
     __Forbidden_FILE = data_path+"/Detectors/SQLValidator/forbidden.json"
     """"this class will validate as a second layer of defense 
-        if the given content contains sql injection payload of not
-        :param content - the request/response content to validate,
-        :param forbidden - addition regex list to block with
-        :param legitimate - regex list of phrases that the client allow
-        :return: double number - the percentage of sql injection certainty """
+        to the sql injection detector if the given content 
+        contains sql injection payload of not """
+
+    # TODO: adjust usage with legitimate and forbidden list - will we receive regex ?
+    #  or only words? (especially in the legit list) - need to think on solution
     def __init__(self):
         self.__regex_list = list()
         self.__load_data()
 
     def validate(self, content, forbidden=None, legitimate=None):
+        """ :param content - the request/response content to validate,
+            :param forbidden - addition regex list to block with
+            :param legitimate - regex list of phrases that the client allow
+            :return: double number - the percentage of sql injection certainty"""
         content = str(content).upper()
         threats_count = 0
 

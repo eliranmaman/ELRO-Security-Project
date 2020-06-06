@@ -5,9 +5,11 @@ import re
 
 
 class XMLDetector(Detector):
-
+    """this class will detect XML injections attempts"""
     __Forbidden_FILE = data_path+"/Detectors/XMLInjection/forbidden.json"
 
+    # TODO: adjust usage with legitimate and forbidden list - will we receive regex ?
+    #  or only words? (especially in the legit list) - need to think on solution
     def __init__(self):
         self.__forbidden = list()
         self.__flag = list()
