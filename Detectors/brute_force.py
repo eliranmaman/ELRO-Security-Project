@@ -13,25 +13,25 @@ class BruteForce(Detector):
         super().__init__()
         self._data_map = map
 
-    def detect(self, request, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
+    def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
         The method will check path that are in the forbidden list, for every path in this list
         the method will perform brute force check by number of request in the last 1min.
-        :param request: send the full request object.
+        :param parsed_data: Parsed Data (from the parser module) of the request / response
         :param sensitivity: The sensitivity of the detecting
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
         """
         # Pre Processing
-        check_pre_processing = self._pre_processing(forbidden, legitimate, request)
+        check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
             return False
         elif check_pre_processing == Classification.Detected:
             return True
         # ------ This code will run if the path is in the forbidden list ------ #
-        req_path = str(request.path).strip("/")
-        client_ip = request.client_address[0]
+        req_path = parsed_data["path"].strip("/")
+        client_ip = parsed_data["client_ip"]
         last_request, counter = self._get_previous_request_info(client_ip, req_path)
         # Sensitivity will determinate the max_counter.
         if sensitivity == Sensitivity.Regular:
@@ -61,29 +61,29 @@ class BruteForce(Detector):
         else:
             return self._data_map[ip][path]
 
-    def _is_forbidden(self, forbidden, request):
+    def _is_forbidden(self, forbidden, parsed_data):
         """
         The forbidden works on ip black list.
         :param forbidden: list of ips.
-        :param request: the original request
+        :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return: Classification Enum
         """
-        req_ip = str(request.client_address[0])
+        req_ip = parsed_data["client_ip"]
         for req_ip in forbidden:
             return Classification.Detected
         return Classification.NoConclusion
 
-    def _is_legitimate(self, legitimate, request):
+    def _is_legitimate(self, legitimate, parsed_data):
         """
         The method relay on ip+path access control, for ip that have non limited
         access we put only ip.
         The format is: IP<=>PATH (e.g 127.0.0.1<=>controller.html)
         :param legitimate: list of path & ips in this format IP<=>PATH or just IP for unlimited access
-        :param request: the original request
+        :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return: Classification Enum
         """
-        req_path = str(request.path).strip("/")
-        req_ip = str(request.client_address[0])
+        req_path = parsed_data["path"].strip("/")
+        req_ip = parsed_data["client_ip"]
         request_data = "{}<=>{}".format(req_ip, req_path)
         if request_data in legitimate:
             return Classification.Clean
