@@ -5,16 +5,25 @@ import re
 
 
 class XSSDetector(Detector):
-    """this class will detect XSS injections attempts"""
+    """this class will detect XSS injections attempts in a given parsed request/response"""
     __Forbidden_FILE = data_path+"/Detectors/XSSInjection/forbidden.json"
 
     def __init__(self):
         self.__forbidden = list()
         self.refresh()
 
-    # if detected an attack attempt this method will return True and False otherwise
-    def detect(self, request, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
-        request = str(request).upper()
+    def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
+        """
+        Just to be clear: there is not absolute way to determine if request arrive from legit user or not.
+        We can just look for the "sloppy" guys, by checking the User-Agent.
+        This method will determine if the request arrive from bot or not.
+        :param parsed_data: Parsed Data (from the parser module) of the request / response
+        :param sensitivity: The sensitivity of the detecting
+        :param forbidden: list of additional malicious words/regex that we wish to add to the forbidden list on runtime
+        :param legitimate: The legitimate words/regex that we need automatically approve
+        :return: boolean
+        """
+        parsed_data = str(parsed_data).upper()
         forbidden_word_list = []
         if forbidden is not None:
             self.__forbidden += forbidden
@@ -23,7 +32,7 @@ class XSSDetector(Detector):
         # check for xss injection attempts
         for forbidden_word in self.__forbidden:
             try:
-                forbidden_words = re.findall(forbidden_word, request)
+                forbidden_words = re.findall(forbidden_word, parsed_data)
             except Exception as e:
                 print("Exception with " + forbidden_word)
             if len(forbidden_words) > 0:
