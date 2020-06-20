@@ -3,6 +3,7 @@ import json
 from psycopg2 import sql
 
 # TODO: idea - chhange the execute to be in the DBagent class.
+# TODO: Replacing to SQLAlchemy
 
 class Items(object):
 
@@ -25,7 +26,6 @@ class Items(object):
             try:
                 query = self._queries[self._table_name][action]
                 cursor.execute(sql.SQL(query), params)
-                self._db.commit()
                 self.item_id = dict(cursor.fetchone())[self._primary_key]
             finally:
                 cursor.close()
