@@ -4,18 +4,14 @@ from config import data_path
 import re
 
 
-class XMLDetector(Detector):
-    """this class will detect XML injections attempts in a given parsed request/response"""
-    __Forbidden_FILE = data_path+"/Detectors/XMLInjection/forbidden.json"
+class XSSDetector(Detector):
+    """this class will detect XSS injections attempts in a given parsed request/response"""
+    __Forbidden_FILE = data_path+"/Detectors/XSSInjection/forbidden.json"
 
-    # TODO: adjust usage with legitimate and forbidden list - will we receive regex ?
-    #  or only words? (especially in the legit list) - need to think on solution
     def __init__(self):
         self.__forbidden = list()
-        self.__flag = list()
         self.refresh()
 
-    # if detected an attack attempt this method will return True and False otherwise
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
         Just to be clear: there is not absolute way to determine if request arrive from legit user or not.
@@ -27,15 +23,23 @@ class XMLDetector(Detector):
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data = str(parsed_data)
+        parsed_data = str(parsed_data).upper()
+        forbidden_word_list = []
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
             self.__forbidden = list(filter(lambda x: x not in legitimate, self.__forbidden))
-        for malicious_phrase in self.__forbidden:
-            matches = re.findall(malicious_phrase, parsed_data)
-            if len(matches) > 0:
-                return True
+        # check for xss injection attempts
+        for forbidden_word in self.__forbidden:
+            try:
+                forbidden_words = re.findall(forbidden_word, parsed_data)
+            except Exception as e:
+                print("Exception with " + forbidden_word)
+            if len(forbidden_words) > 0:
+                forbidden_word_list.append(forbidden_words)
+        # if detected a forbidden word it is probably an attack
+        if len(forbidden_word_list) > 0:
+            return True
         return False
 
     # returns the forbidden list
@@ -44,10 +48,12 @@ class XMLDetector(Detector):
 
     # loads the external data
     def refresh(self):
-        with open(self.__Forbidden_FILE, "r") as data_file:
-            data = json.load(data_file)
-            for i in data['forbidden']:
-                self.__forbidden.append(i)
-            for i in data['dangerous']:
-                self.__flag.append(i)
-        data_file.close()
+        try:
+            with open(self.__Forbidden_FILE, "r", encoding="utf-8") as data_file:
+                data = json.load(data_file)
+                for i in data['forbidden']:
+                    self.__forbidden.append(i)
+            data_file.close()
+        except Exception as e:
+            print(e)
+
