@@ -15,19 +15,24 @@ class XMLDetector(Detector):
         self.__flag = list()
         self.refresh()
 
+    # if detected an attack attempt this method will return True and False otherwise
     def detect(self, request, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         request = str(request)
-        for malicous_phrase in self.__forbidden:
-            matches = re.findall(malicous_phrase, request)
+        if forbidden is not None:
+            self.__forbidden += forbidden
+        if legitimate is not None:
+            self.__forbidden = list(filter(lambda x: x not in legitimate, self.__forbidden))
+        for malicious_phrase in self.__forbidden:
+            matches = re.findall(malicious_phrase, request)
             if len(matches) > 0:
                 return True
-
         return False
 
-
+    # returns the forbidden list
     def get_forbidden_list(self):
         return self.__forbidden
 
+    # loads the external data
     def refresh(self):
         with open(self.__Forbidden_FILE, "r") as data_file:
             data = json.load(data_file)

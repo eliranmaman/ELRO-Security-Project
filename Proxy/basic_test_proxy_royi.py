@@ -8,7 +8,7 @@ from config import server
 
 
 from config import log_dict
-from Detectors import SQLDetector, SQLValidator, XMLDetector, Sensitivity
+from Detectors import SQLDetector, SQLValidator, XSSDetector, XMLDetector, Sensitivity
 
 hostname2 = "www.facebook.com"
 SQL_THRESHOLD = 0.5
@@ -50,7 +50,7 @@ class BasicTestProxyRoyi(Proxy):
         def do_GET(self, body=True):
             sent = False
             try:
-                print()
+                print("GET RECEIVED")
                 url = 'https://{}{}'.format(hostname2, self.path)
                 req_header = self.parse_headers()
                 xml_det = XMLDetector()
@@ -98,36 +98,35 @@ class BasicTestProxyRoyi(Proxy):
                 content_len = int(self.headers.get('content-length', 0))
                 post_body = self.rfile.read(content_len)
                 req_header = self.parse_headers()
-                sql_det = SQLDetector()
-                sql_validator = SQLValidator()
+                xss_det = XSSDetector()
                 headers = self.headers
                 params = self.path
                 body = str(post_body)[2:-1]
-                malicious_headers = sql_det.detect(headers, sensitivity=Sensitivity.Sensitive)
+                malicious_headers = xss_det.detect(headers, sensitivity=Sensitivity.Sensitive)
                 to_block = malicious_headers
                 if to_block:
-                    print("sql attack detected in the headers!!")
-                    self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
+                    print("xss attack detected in the headers!!")
+                    self.send_error(403, 'Access Denied, XSS@@@ ATTACK DETECTED!')
                     return
-                malicious_body = sql_det.detect(body)
+
+                malicious_body = xss_det.detect(body)
                 to_block = malicious_body
                 if to_block:
-                    assurance_percent = sql_validator.validate(body)
-                    print('total', assurance_percent)
-                    if assurance_percent >= SQL_THRESHOLD:
-                        print(assurance_percent)
-                        print("sql attack detected in the body!!")
-                        self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
-                        return
-                    else:
-                        post_body = re.escape(post_body)
-                        print("sending escaped body\n", post_body)
+                    print("xss attack detected in the body!!")
+                    self.send_error(403, 'Access Denied, XSS@@@ ATTACK DETECTED!')
+                    return
+                try:
+                    with open("false_negatives.txt", "w+") as fd:
+                        fd.write(body)
+                except Exception as e:
+                    print(e)
 
-                malicious_params = sql_det.detect(params, sensitivity=Sensitivity.Sensitive)
+                print("False negative->", body)
+                malicious_params = xss_det.detect(params, sensitivity=Sensitivity.Sensitive)
                 to_block = malicious_params
                 if to_block:
-                    print("sql attack detected in the params!!")
-                    self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
+                    print("xss attack detected in the params!!")
+                    self.send_error(403, 'Access Denied, XSS@@@ ATTACK DETECTED!')
                     return
                 resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()),
                                      verify=False)
@@ -142,6 +141,58 @@ class BasicTestProxyRoyi(Proxy):
                 self.finish()
                 if not sent:
                     self.send_error(404, 'error trying to proxy')
+        # SQL
+        # def do_POST(self, body=True):
+        #     sent = False
+        #     try:
+        #         url = 'https://{}{}'.format(hostname2, self.path)
+        #         content_len = int(self.headers.get('content-length', 0))
+        #         post_body = self.rfile.read(content_len)
+        #         req_header = self.parse_headers()
+        #         sql_det = SQLDetector()
+        #         sql_validator = SQLValidator()
+        #         headers = self.headers
+        #         params = self.path
+        #         body = str(post_body)[2:-1]
+        #         malicious_headers = sql_det.detect(headers, sensitivity=Sensitivity.Sensitive)
+        #         to_block = malicious_headers
+        #         if to_block:
+        #             print("sql attack detected in the headers!!")
+        #             self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
+        #             return
+        #         malicious_body = sql_det.detect(body)
+        #         to_block = malicious_body
+        #         if to_block:
+        #             assurance_percent = sql_validator.validate(body)
+        #             print('total', assurance_percent)
+        #             if assurance_percent >= SQL_THRESHOLD:
+        #                 print(assurance_percent)
+        #                 print("sql attack detected in the body!!")
+        #                 self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
+        #                 return
+        #             else:
+        #                 post_body = re.escape(post_body)
+        #                 print("sending escaped body\n", post_body)
+        #
+        #         malicious_params = sql_det.detect(params, sensitivity=Sensitivity.Sensitive)
+        #         to_block = malicious_params
+        #         if to_block:
+        #             print("sql attack detected in the params!!")
+        #             self.send_error(403, 'Access Denied, SQL ATTACK DETECTED!')
+        #             return
+        #         resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()),
+        #                              verify=False)
+        #         sent = True
+        #
+        #         self.send_response(resp.status_code)
+        #         self.send_resp_headers(resp)
+        #         if body:
+        #             self.wfile.write(resp.content)
+        #         return
+        #     finally:
+        #         self.finish()
+        #         if not sent:
+        #             self.send_error(404, 'error trying to proxy')
 
         # def detect_sql_injection(self, content):
 
