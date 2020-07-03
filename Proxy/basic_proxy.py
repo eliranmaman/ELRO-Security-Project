@@ -2,10 +2,13 @@ import datetime
 import random
 import string
 from http import cookies
+import ipaddress
 import logging
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
+
+from UserProtection.script_protection import ScriptDetector
 from config import cookies_map
 from Parser import BaseHTTPRequestParser, Parser
 
@@ -16,9 +19,9 @@ from config import server
 from config import log_dict
 from Detectors import SQLDetector, BruteForce, BotsDetector, ProxyDetector
 
-hostname2 = "www.google.com"
+hostname2 = "www.eliranm.co"
 
-sys.stderr = open(log_dict+"/basic_proxy.log", 'a+')
+sys.stderr = open(log_dict + "/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(logging.ERROR)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -49,6 +52,7 @@ class BasicProxy(Proxy):
 
     class RequestHandler(BaseHTTPRequestHandler):
         Controller = Proxy._controller
+
         def do_HEAD(self):
             self.do_GET(body=False)
 
@@ -66,6 +70,7 @@ class BasicProxy(Proxy):
                 print("Detecting .....")
                 check = detector.detect(parsed_data)
                 # print("Finish .....")
+                print("AA")
                 if check is True:
                     print("Busted, Communication is down!")
                     req_header['Cookie'] = None
@@ -76,17 +81,37 @@ class BasicProxy(Proxy):
                 if check is True:
                     resp.headers['CSRF_TOKEN'] = "Got u"
                 # if resp.cookies and not check:
-                    # secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
-                    # key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
-                    # cookies_map[key] = secret_value
-                    # cookie = cookies.SimpleCookie()
-                    # cookie['Elro-Sec-Token'] = secret_value
-                    # cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
-                    # resp.headers["Set-Cookie"] = cookie
+                # secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
+                # key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
+                # cookies_map[key] = secret_value
+                # cookie = cookies.SimpleCookie()
+                # cookie['Elro-Sec-Token'] = secret_value
+                # cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
+                # resp.headers["Set-Cookie"] = cookie
+                user_protect = ScriptDetector()
+                detectedd = user_protect.detect(resp) > 0
+                if "text/html" in resp.headers.get('Content-Type', ""):
+                    new_content = resp.text
+                    print(new_content)
+                    where_to_add = resp.text.find("</head>")
+                    print("Add: {}".format(where_to_add))
+                    send_content = new_content[:where_to_add] + "<script>" \
+                                                                "var is_confirm = confirm('This site contain...." \
+                                                                " Do you eant to stop the page loading?');" \
+                                                                "if(is_confirm) alert('confirmed');" \
+                                                                "else window.location.href='https://www.elro-sec.com/safe_place.html'" \
+                                                                "</script>" + \
+                                   new_content[where_to_add:]
+                    send_content = bytes(send_content.encode('utf_8'))
+                else:
+                    send_content = resp.content
+                resp.headers['Content-Length'] = "{}".format(len(send_content))
+                print("{}".format(resp.headers))
                 self.send_response(resp.status_code)
                 self.send_resp_headers(resp)
+                print(send_content)
                 if body:
-                    self.wfile.write(resp.content)
+                    self.wfile.write(send_content)
                 return
             except Exception as e:
                 print(e)
@@ -137,7 +162,7 @@ class BasicProxy(Proxy):
                 if key not in ['Content-Encoding', 'Transfer-Encoding', 'content-encoding', 'transfer-encoding',
                                'content-length', 'Content-Length']:
                     self.send_header(key, respheaders[key])
-            self.send_header('Content-Length', len(resp.content))
+            # self.send_header('Content-Length', len(resp.content))
             self.end_headers()
 
         def merge_two_dicts(self, x, y):
