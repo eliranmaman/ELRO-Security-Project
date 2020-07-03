@@ -16,8 +16,17 @@ controller = None
 db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
 data_path = "Data/"
 cookies_map = dict()
-brute_force_map = dict()
+brute_force_map = {
+    "127.0.0.1": dict()
+}
 BOT_KEY = "f0ec0b2f185b868ac2f20988011328ec"
 BOTS_URL = "https://api.whatismybrowser.com/api/v2/"
 PROXY_DETECTOR_KEY = "4s1v32-419650-3730en-030383"
 PROXY_DETECTOR_KEY_URL = "http://proxycheck.io/v2/"
+
+bit_map = {
+    "inline_script": 1,
+    "files_script": 2,
+    "access_cookies": 4,
+    "iframe": 8,
+}
