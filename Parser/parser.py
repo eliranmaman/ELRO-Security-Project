@@ -4,7 +4,7 @@ import enum
 class Parser(object):
 
     class DataType(enum.Enum):
-        Request = 1,
+        Request = 1
         Response = 2
 
     def parse(self, data, data_type, method):
