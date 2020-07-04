@@ -98,7 +98,6 @@ class UserProtectionDetector(object):
         for url in urls:
             url = url[0]
             parsed_uri = urlparse(url)
-            print(parsed_uri)
             if not self._UserProtectionResults.csrf_js_files:
                 self._UserProtectionResults.csrf_js_files = '{uri.path}'.format(uri=parsed_uri).find('.js') > 0
             host_uri = '{uri.netloc}'.format(uri=parsed_uri).replace("www.", "")
