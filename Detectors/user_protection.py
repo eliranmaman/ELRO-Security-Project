@@ -73,7 +73,7 @@ class UserProtectionDetector(object):
         This method will try to detect attempt to access the user cookies via the DOM
         :return: Boolean
         """
-        return self._response.text.find("document.cookie") > 0
+        return self._response.text.find("document.cookie") > 0 or self._response.text.find("browser.cookie") > 0
 
     @invoke_detector
     def __iframe(self):
