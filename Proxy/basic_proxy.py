@@ -1,25 +1,18 @@
-import datetime
-import random
-import string
-from http import cookies
-import ipaddress
 import logging
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 
-from UserProtection.script_protection import ScriptDetector
-from config import cookies_map
+from Detectors.user_protection import UserProtectionDetector
 from Parser import BaseHTTPRequestParser, Parser
 
-from Detectors.cookies_poisoning import CookiesPoisoning
-from Detectors.csrf import CSRF
+
 from Proxy import Proxy
 from config import server
 from config import log_dict
 from Detectors import SQLDetector, BruteForce, BotsDetector, ProxyDetector
 
-hostname2 = "www.eliranm.co"
+hostname2 = "www.elro-sec.com"
 
 sys.stderr = open(log_dict + "/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
@@ -76,6 +69,7 @@ class BasicProxy(Proxy):
                     req_header['Cookie'] = None
                 # else:
                 #     print("verify completed, Welcome back {}".format(self.client_address))
+                print("GET: {}".format(url))
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 sent = True
                 if check is True:
@@ -88,13 +82,14 @@ class BasicProxy(Proxy):
                 # cookie['Elro-Sec-Token'] = secret_value
                 # cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
                 # resp.headers["Set-Cookie"] = cookie
-                user_protect = ScriptDetector()
-                detectedd = user_protect.detect(resp) > 0
-                if "text/html" in resp.headers.get('Content-Type', ""):
+                user_protect = UserProtectionDetector(resp)
+                what_detected = user_protect.detect()
+                detectedd = what_detected.bit_map > 0
+                print("Detected: {}".format(what_detected.bit_map))
+                if "text/html" in resp.headers.get('Content-Type', "") and detectedd:
                     new_content = resp.text
-                    print(new_content)
+                    # print(new_content)
                     where_to_add = resp.text.find("</head>")
-                    print("Add: {}".format(where_to_add))
                     send_content = new_content[:where_to_add] + "<script>" \
                                                                 "var is_confirm = confirm('This site contain...." \
                                                                 " Do you eant to stop the page loading?');" \
@@ -106,10 +101,10 @@ class BasicProxy(Proxy):
                 else:
                     send_content = resp.content
                 resp.headers['Content-Length'] = "{}".format(len(send_content))
-                print("{}".format(resp.headers))
+                # print("{}".format(resp.headers))
                 self.send_response(resp.status_code)
                 self.send_resp_headers(resp)
-                print(send_content)
+                # print(send_content)
                 if body:
                     self.wfile.write(send_content)
                 return
@@ -162,7 +157,7 @@ class BasicProxy(Proxy):
                 if key not in ['Content-Encoding', 'Transfer-Encoding', 'content-encoding', 'transfer-encoding',
                                'content-length', 'Content-Length']:
                     self.send_header(key, respheaders[key])
-            # self.send_header('Content-Length', len(resp.content))
+            self.send_header('Content-Length', respheaders.get('Content-Length', len(resp.content)))
             self.end_headers()
 
         def merge_two_dicts(self, x, y):
