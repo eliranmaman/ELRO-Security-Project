@@ -52,28 +52,20 @@ class BasicProxy(Proxy):
         def do_GET(self, body=True):
             sent = False
             try:
+                print("URL: {}".format(self.log_date_time_string()))
                 url = 'https://{}{}'.format(hostname2, self.path)
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
                 detector = BruteForce()
                 parser = BaseHTTPRequestParser()
-                print("Parsing")
-                parsed_data = parser.parse(self, Parser.DataType.Request, "GET")
-                print("Detecting .....")
-                check = detector.detect(parsed_data)
+                parsed_data = parser.parse(self, Parser.DataType.Request, self.command)
+                # check = detector.detect(parsed_data)
                 # print("Finish .....")
-                print("AA")
-                if check is True:
-                    print("Busted, Communication is down!")
-                    req_header['Cookie'] = None
                 # else:
                 #     print("verify completed, Welcome back {}".format(self.client_address))
-                print("GET: {}".format(url))
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 sent = True
-                if check is True:
-                    resp.headers['CSRF_TOKEN'] = "Got u"
                 # if resp.cookies and not check:
                 # secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
                 # key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
@@ -85,7 +77,6 @@ class BasicProxy(Proxy):
                 user_protect = UserProtectionDetector(resp)
                 what_detected = user_protect.detect()
                 detectedd = what_detected.bit_map > 0
-                print("Detected: {}".format(what_detected.bit_map))
                 if "text/html" in resp.headers.get('Content-Type', "") and detectedd:
                     new_content = resp.text
                     # print(new_content)
@@ -105,6 +96,7 @@ class BasicProxy(Proxy):
                 self.send_response(resp.status_code)
                 self.send_resp_headers(resp)
                 # print(send_content)
+                print(self.client_address)
                 if body:
                     self.wfile.write(send_content)
                 return
