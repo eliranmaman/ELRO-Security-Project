@@ -1,5 +1,5 @@
 """
-This Class Design to create Relaction maping between the database to the Object Using SQL Alchemy.
+This Class Design to create Relation mapping between the database to the Object Using SQL Alchemy.
 Doc: https://docs.sqlalchemy.org/en/13/index.html
 Tutorial: https://docs.sqlalchemy.org/en/13/orm/tutorial.html
 """
