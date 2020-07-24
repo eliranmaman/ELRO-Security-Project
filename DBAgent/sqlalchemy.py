@@ -32,28 +32,6 @@ def decrypt_data(value):
     return plain_text.decode('utf-8')
 
 
-def encrypt_data1(value):
-    value = json.dumps(value) if type(value) is dict else value
-    value = value.encode('ascii')
-    key = SHA256.new(enc_key).digest()
-    enc_IV = Random.new().read(AES.block_size)
-    encryptor = AES.new(key, AES.MODE_CBC, enc_IV)
-    enc_padding = AES.block_size - len(value) % AES.block_size
-    value += bytes([enc_padding]) * enc_padding
-    value = enc_IV + encryptor.encrypt(value)
-    return value
-
-
-def decrypt_data1(value):
-    key = SHA256.new(enc_key).digest()
-    dec_IV = value[:AES.block_size].encode()
-    decryptor = AES.new(key, AES.MODE_CBC, dec_IV)
-    value = decryptor.decrypt(value[AES.block_size:])
-    dec_padding = value[-1]
-    value = value[:-dec_padding]
-    return value
-
-
 def encrypt_item(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
