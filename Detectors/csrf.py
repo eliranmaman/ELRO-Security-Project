@@ -20,12 +20,12 @@ class CSRF(Detector):
         elif check_pre_processing == Classification.Clean:
             return False
         # Getting the request Type (e.g same-origin)
-        sec_fetch_site = parsed_data["headers"].get('Sec-Fetch-Site', None)
+        sec_fetch_site = parsed_data.headers.get('Sec-Fetch-Site', None)
         # If the request is in the same-origin return False
         if sec_fetch_site == "same-origin":  # TODO: check if the attacker can change this header
             return False
         # Sensitivity policy
-        method = parsed_data["method"]
+        method = parsed_data.method
         if sensitivity == Sensitivity.Regular:
             if method == "POST" or method == "DELETE" or method == "PUT":
                 return True
@@ -45,7 +45,7 @@ class CSRF(Detector):
         :return: Classification Enum
         """
         # Cleaning the request path
-        req_path = parsed_data["path"]
+        req_path = parsed_data.path.strip("/")
         for path in legitimate:
             if req_path in path:
                 return Classification.Clean
