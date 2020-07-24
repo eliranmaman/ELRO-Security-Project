@@ -84,6 +84,7 @@ class HttpResponse(SQLAlchemy.Item):
     is_redirect = Column('is_redirect', Boolean, nullable=False)
     response_url = Column('response_url', String, nullable=False)
     from_server_id = Column('from_server_id', Integer, ForeignKey("servers.id"), nullable=False)
+    from_dns_name = Column('from_dns_name', String, nullable=False)
     to_ip = Column('to_ip', String, nullable=False)
     decision = Column('decision', Boolean, nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)

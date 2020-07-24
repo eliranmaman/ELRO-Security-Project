@@ -32,12 +32,12 @@ class UserProtectionResults(object):
 
 class UserProtectionDetector(object):
 
-    def __init__(self, response):
+    def __init__(self, parsed_response):
         """
-        :param response: The original Response
+        :param parsed_response: The HttpResponse
         """
         self._UserProtectionResults = UserProtectionResults()
-        self._response = response
+        self._response = parsed_response
 
     def detect(self):
         """
@@ -57,7 +57,7 @@ class UserProtectionDetector(object):
         Will looking for inline scripts in the page.
         :return: Boolean
         """
-        return self._response.text.find("script") > 0
+        return self._response.content.find("script") > 0
 
     @invoke_detector
     def __detect_script_files(self):
@@ -75,7 +75,7 @@ class UserProtectionDetector(object):
         This method will try to detect attempt to access the user cookies via the DOM
         :return: Boolean
         """
-        return self._response.text.find("document.cookie") > 0 or self._response.text.find("browser.cookie") > 0
+        return self._response.content.find("document.cookie") > 0 or self._response.content.find("browser.cookie") > 0
 
     @invoke_detector
     def __iframe(self):
@@ -84,7 +84,7 @@ class UserProtectionDetector(object):
         This method has high value of False Positive.
         :return: Boolean
         """
-        return self._response.text.find("iframe") > 0
+        return self._response.content.find("iframe") > 0
 
     @invoke_detector
     def __detect_csrf_requests(self):
@@ -94,9 +94,9 @@ class UserProtectionDetector(object):
         This method has high value of False Positive.
         :return: Boolean
         """
-        request_url = urlparse(self._response.request.url)
+        request_url = urlparse(self._response.from_dns_name)
         request_url = '{uri.netloc}'.format(uri=request_url).replace("www.", "")
-        urls = re.findall(url_regex, self._response.text)
+        urls = re.findall(url_regex, self._response.content)
         for url in urls:
             url = url[0]
             parsed_uri = urlparse(url)
