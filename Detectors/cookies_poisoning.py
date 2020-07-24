@@ -44,13 +44,9 @@ class CookiesPoisoning(Detector):
             return True
         m = re.match(token_regex, cookies)
         if m is None:
-            return True
-        secret_value = m.group(1)
-        secret_value = db.get_session.query(CookiesToken)\
-            .filter_by(token=secret_value, active=True, ip=parsed_data.from_ip).first()
-        if secret_value is None:
             return False
-        check = secret_value.token != "{}@Elro-Sec-End".format(secret_value)
+        secret_value = m.group(1)
+        check = secret_value == "{}@Elro-Sec-End".format(cookies_token.token)
         return check
 
     def _is_legitimate(self, legitimate, parsed_data):
