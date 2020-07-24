@@ -1,3 +1,6 @@
+import parser
+
+import requests
 from flask import Flask, request
 from flask_restful import Resource, Api
 import passlib
@@ -5,6 +8,7 @@ from passlib.handlers.sha2_crypt import sha256_crypt
 
 
 from DBAgent.orm import Users
+from Detectors.user_protection import UserProtectionDetector
 from config import db
 app = Flask(__name__)
 api = Api(app)
@@ -24,6 +28,7 @@ class LoginHandler(Resource):
         print(user.email)
         session.commit()
         return {}
+
 
 class RegisterHandler(Resource):
     def post(self):
@@ -62,10 +67,16 @@ class AddNewWebsiteHandler(Resource):
 
 class UserProtectorHandler(Resource):
     def post(self):
-        jsaa = request.get_json()
-        host = jsaa['host_name']
-        print(host)
-        return {'bye': 'world'}
+        incoming_json = request.get_json()
+        host_to_protect = incoming_json['host_name']
+        print("adsdasdasdadasdas", host_to_protect)
+        response = requests.get(host_to_protect)
+        upc = UserProtectionDetector(response)
+        resp = upc.detect()
+        return {
+            "alerts": resp.security_alerts
+        }
+        # return {'bye': 'world'}
 
 
 api.add_resource(LoginHandler, '/login')

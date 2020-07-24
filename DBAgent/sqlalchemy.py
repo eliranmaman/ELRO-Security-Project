@@ -2,12 +2,7 @@
 Crypto issue: https://github.com/openthread/openthread/issues/1137
 Varname: https://github.com/pwwang/python-varname
 """
-import base64
-import json
 from functools import wraps
-from Crypto.Cipher import AES
-from Crypto.Hash import SHA256
-from Crypto import Random
 from cryptography.fernet import Fernet
 
 from sqlalchemy import create_engine

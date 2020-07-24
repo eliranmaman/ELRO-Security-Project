@@ -26,6 +26,7 @@ class UserProtectionResults(object):
         self.bit_map = 0
         self.csrf_urls = []
         self.csrf_js_files = False
+        self.security_alerts = ["This is the first alert", "Second alert wow!!"]
 
 
 class UserProtectionDetector(object):
