@@ -4,6 +4,8 @@ Doc: https://docs.sqlalchemy.org/en/13/index.html
 Tutorial: https://docs.sqlalchemy.org/en/13/orm/tutorial.html
 """
 import datetime
+import time
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Float
 
 from DBAgent.sqlalchemy import SQLAlchemy
@@ -220,3 +222,28 @@ class CookiesToken(SQLAlchemy.Item):
     ip = Column('ip', String, nullable=False)
     token = Column('token', String, nullable=False)
     active = Column('active', Boolean, nullable=False, default=True)
+
+    def __init__(self, item_id=None, dns_name=None, ip=None, token=None, active=True):
+        self.item_id = item_id
+        self.dns_name = dns_name
+        self.ip = ip
+        self.token = token
+        self.active = active
+
+
+class BruteForceDataItem(SQLAlchemy.Item):
+    __tablename__ = "brute_force_data"
+    item_id = Column('id', Integer, primary_key=True, unique=True)
+    dns_name = Column('dns_name', String, nullable=False)
+    ip = Column('ip', String, nullable=False)
+    path = Column('token', String, nullable=False)
+    counter = Column('counter', Integer, default=0, nullable=False)
+    time_stamp = Column('time_stamp', Integer, nullable=False, default=time.time())
+
+    def __init__(self, item_id=None, dns_name=None, ip=None, path=None, counter=0, time_stamp=time.time()):
+        self.item_id = item_id
+        self.dns_name = dns_name
+        self.ip = ip
+        self.path = path
+        self.counter = counter
+        self.time_stamp = time_stamp

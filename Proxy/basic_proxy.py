@@ -59,12 +59,13 @@ class BasicProxy(Proxy):
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                detector = CookiesPoisoning()
+                detector = BruteForce()
                 parser = BaseHTTPRequestParser()
                 parsed_data = parser.parse(self)
                 check = detector.detect(parsed_data)
                 session = db.get_session()
                 if not check:
+                    print("False")
                     token = session.query(CookiesToken).\
                         filter_by(active=True, ip=parsed_data.from_ip, dns_name=parsed_data.host_name).first()
                     if token is not None:
