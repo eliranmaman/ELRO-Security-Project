@@ -80,19 +80,27 @@ class HttpResponse(SQLAlchemy.Item):
     __tablename__ = "http_responses"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     request_id = Column('request_id', Integer, ForeignKey("http_requests.id"), nullable=False)
-    method = Column('method', String, nullable=False)
-    content = Column('content', String, nullable=True)
+    content = Column('content', String, nullable=False, default='')
+    headers = Column('headers', String, nullable=False, default='')
+    status_code = Column('status_code', Integer, nullable=False)
+    cookies = Column('cookies', String, nullable=False, default='')
+    is_redirect = Column('is_redirect', Boolean, nullable=False)
+    response_url = Column('response_url', String, nullable=False)
     from_server_id = Column('from_server_id', Integer, ForeignKey("servers.id"), nullable=False)
     to_ip = Column('to_ip', String, nullable=False)
     decision = Column('decision', Boolean, nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
-    def __init__(self, response_id=None, request_id=None, method=None, content=None, from_server_id=None, to_ip=None,
-                 decision=None, time_stamp=None):
+    def __init__(self, response_id=None, request_id=None, content=None, headers=None, status_code=None, cookies=None,
+                 is_redirect=None, response_url=None, from_server_id=None, to_ip=None, decision=None, time_stamp=None):
         self.item_id = response_id
         self.request_id = request_id
-        self.method = method
         self.content = content
+        self.headers = headers
+        self.status_code = status_code
+        self.cookies = cookies
+        self.is_redirect = is_redirect
+        self.response_url = response_url
         self.from_server_id = from_server_id
         self.to_ip = to_ip
         self.decision = decision
@@ -102,20 +110,26 @@ class HttpResponse(SQLAlchemy.Item):
 class HttpRequest(SQLAlchemy.Item):
     __tablename__ = "http_requests"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    response_id = Column('response_id', Integer, ForeignKey("http_responses.id"), nullable=False)
+    response_id = Column('response_id', Integer, ForeignKey("http_responses.id"), nullable=False, default=1)
     method = Column('method', String, nullable=False)
-    content = Column('content', String, nullable=True)
+    content = Column('content', String, nullable=False, default='')
+    headers = Column('headers', String, nullable=False, default='')
+    path = Column('path', String, nullable=False, default='/')
     to_server_id = Column('to_server_id', Integer, ForeignKey("servers.id"), nullable=False)
+    host_name = Column('host_name', String, nullable=False)
     from_ip = Column('from_ip', String, nullable=False)
     decision = Column('decision', Boolean, nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
-    def __init__(self, request_id=None, response_id=None, method=None, content=None, to_server_id=None, from_ip=None,
-                 decision=None, time_stamp=None):
+    def __init__(self, request_id=None, response_id=None, method=None, content=None, headers=None, path=None,
+                 host_name=None, to_server_id=None, from_ip=None, decision=None, time_stamp=None):
         self.item_id = request_id
         self.response_id = response_id
         self.method = method
         self.content = content
+        self.header = headers
+        self.path = path
+        self.host_name = host_name
         self.from_ip = from_ip
         self.to_server_id = to_server_id
         self.decision = decision
