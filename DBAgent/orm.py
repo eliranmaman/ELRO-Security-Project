@@ -122,7 +122,7 @@ class HttpRequest(SQLAlchemy.Item):
         self.response_id = response_id
         self.method = method
         self.content = content
-        self.header = headers
+        self.headers = headers
         self.path = path
         self.host_name = host_name
         self.from_ip = from_ip
@@ -211,3 +211,12 @@ class MLDataResponse(SQLAlchemy.Item):
         self.response_id = response_id
         self.user_protection = user_protection
         self.xss_injection = xss_injection
+
+
+class CookiesToken(SQLAlchemy.Item):
+    __tablename__ = "cookie_token"
+    item_id = Column('id', Integer, primary_key=True, unique=True)
+    dns_name = Column('dns_name', String, nullable=False)
+    ip = Column('ip', String, nullable=False)
+    token = Column('token', String, nullable=False)
+    active = Column('active', Boolean, nullable=False)
