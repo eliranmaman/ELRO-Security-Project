@@ -1,4 +1,9 @@
-from DBAgent.sqlalchemy import SQLAlchemy
+from random import Random
+
+from cryptography.hazmat.primitives.ciphers.algorithms import AES
+from cryptography.hazmat.primitives.hashes import SHA256
+
+# from DBAgent.sqlalchemy import SQLAlchemy
 
 debug = True
 if debug:
@@ -13,7 +18,7 @@ else:
     }
 log_dict = "logs/"
 controller = None
-db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
+# db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
 data_path = "Data/"
 cookies_map = dict()
 brute_force_map = {
@@ -42,3 +47,6 @@ bit_map_errors = {
 
 url_regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s(" \
             r")<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’])) "
+
+enc_list = ["content", "headers", "cookies"]
+enc_key = b'&E)H@McQeThWmZq4t7w!z%C*F-JaNdRg'
