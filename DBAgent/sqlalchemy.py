@@ -2,22 +2,39 @@
 Crypto issue: https://github.com/openthread/openthread/issues/1137
 Varname: https://github.com/pwwang/python-varname
 """
+import base64
 import json
 from functools import wraps
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from Crypto import Random
-from varname import nameof
+from cryptography.fernet import Fernet
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from DBAgent import DBHandler
-from config import enc_key, enc_list
+
+enc_list = ["content", "headers", "cookies", "password"]
+enc_key = b'tkBV4rY7gcEoWmpvqHZTvXExvuh8YsfhcdFUdBPzXeU='
 
 
 def encrypt_data(value):
+    cipher_suite = Fernet(enc_key)
+    cipher_text = cipher_suite.encrypt(value.encode('utf-8'))
+    return cipher_text.decode('utf-8')
+
+
+def decrypt_data(value):
+    value = value.encode('utf-8')
+    cipher_suite = Fernet(enc_key)
+    plain_text = cipher_suite.decrypt(value)
+    return plain_text.decode('utf-8')
+
+
+def encrypt_data1(value):
     value = json.dumps(value) if type(value) is dict else value
+    value = value.encode('ascii')
     key = SHA256.new(enc_key).digest()
     enc_IV = Random.new().read(AES.block_size)
     encryptor = AES.new(key, AES.MODE_CBC, enc_IV)
@@ -27,9 +44,9 @@ def encrypt_data(value):
     return value
 
 
-def decrypt_data(value):
+def decrypt_data1(value):
     key = SHA256.new(enc_key).digest()
-    dec_IV = value[:AES.block_size]
+    dec_IV = value[:AES.block_size].encode()
     decryptor = AES.new(key, AES.MODE_CBC, dec_IV)
     value = decryptor.decrypt(value[AES.block_size:])
     dec_padding = value[-1]
@@ -54,6 +71,7 @@ def decrypt_item(func):
         item = func(self, *args, **kwargs)
         for attr, value in item.__dict__.items():
             if attr in enc_list:
+                print(attr, value)
                 item.__dict__[attr] = decrypt_data(value)
         return item
     return wrapper
