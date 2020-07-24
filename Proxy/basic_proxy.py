@@ -1,16 +1,18 @@
 import logging
 import sys
+from http import cookies
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
+from cryptography.fernet import Fernet
 
+from DBAgent import CookiesToken
 from Detectors.user_protection import UserProtectionDetector
 from Parser import BaseHTTPRequestParser, Parser
 
-
 from Proxy import Proxy
-from config import server
+from config import server, db
 from config import log_dict
-from Detectors import SQLDetector, BruteForce, BotsDetector, ProxyDetector
+from Detectors import BruteForce, CookiesPoisoning
 
 hostname2 = "www.elro-sec.com"
 
@@ -52,28 +54,36 @@ class BasicProxy(Proxy):
         def do_GET(self, body=True):
             sent = False
             try:
-                print("URL: {}".format(self.log_date_time_string()))
+                # print("URL: {}".format(self.log_date_time_string()))
                 url = 'https://{}{}'.format(hostname2, self.path)
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
                 req_header = self.parse_headers()
-                detector = BruteForce()
+                detector = CookiesPoisoning()
                 parser = BaseHTTPRequestParser()
-                parsed_data = parser.parse(self, Parser.DataType.Request, self.command)
-                # check = detector.detect(parsed_data)
-                # print("Finish .....")
-                # else:
-                #     print("verify completed, Welcome back {}".format(self.client_address))
+                parsed_data = parser.parse(self)
+                check = detector.detect(parsed_data)
+                session = db.get_session()
+                if not check:
+                    token = session.query(CookiesToken).\
+                        filter_by(active=True, ip=parsed_data.from_ip, dns_name=parsed_data.host_name).first()
+                    if token is not None:
+                        token.active=False
+                        session.commit()
+                else:
+                    print("BUSTRD")
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 sent = True
-                # if resp.cookies and not check:
-                # secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
-                # key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
-                # cookies_map[key] = secret_value
-                # cookie = cookies.SimpleCookie()
-                # cookie['Elro-Sec-Token'] = secret_value
-                # cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
-                # resp.headers["Set-Cookie"] = cookie
+                if not check:
+                    token = CookiesToken(ip=parsed_data.from_ip, dns_name=parsed_data.host_name,
+                                         token=Fernet.generate_key().decode('utf-8'), active=True)
+                    session.add(token)
+                    session.commit()
+                    secret_value = "{}@Elro-Sec-End".format(token.token)
+                    cookie = cookies.SimpleCookie()
+                    cookie['Elro-Sec-Token'] = secret_value
+                    cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
+                    resp.headers["Set-Cookie"] = cookie
                 user_protect = UserProtectionDetector(resp)
                 what_detected = user_protect.detect()
                 detectedd = what_detected.bit_map > 0

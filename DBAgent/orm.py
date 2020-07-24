@@ -219,4 +219,4 @@ class CookiesToken(SQLAlchemy.Item):
     dns_name = Column('dns_name', String, nullable=False)
     ip = Column('ip', String, nullable=False)
     token = Column('token', String, nullable=False)
-    active = Column('active', Boolean, nullable=False)
+    active = Column('active', Boolean, nullable=False, default=True)
