@@ -13,7 +13,8 @@ else:
     }
 log_dict = "logs/"
 controller = None
-db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
+# db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
+db = SQLAlchemy("elroadmin", "123456", "localhost", "3306", "elroauth")
 data_path = "Data/"
 cookies_map = dict()
 brute_force_map = dict()

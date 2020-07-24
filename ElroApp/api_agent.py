@@ -1,14 +1,29 @@
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Resource, Api
+import passlib
+from passlib.handlers.sha2_crypt import sha256_crypt
 
+
+from DBAgent.orm import Users
+from config import db
 app = Flask(__name__)
 api = Api(app)
 
 
 class LoginHandler(Resource):
     def post(self):
+
         return {'hello': 'world'}
 
+    def get(self):
+        session = db.get_session()
+        user = db.get_session().query(Users).get(1)
+        # session.query(Users).filter_by(active=True).all() / .first()
+        # session.query(Users).filter_by(active=True).order_by(DESC(Users.id).all() / .first()
+        user.email = "royi@gmail.com"
+        print(user.email)
+        session.commit()
+        return {}
 
 class RegisterHandler(Resource):
     def post(self):
@@ -45,6 +60,14 @@ class AddNewWebsiteHandler(Resource):
         return {'bye': 'world'}
 
 
+class UserProtectorHandler(Resource):
+    def post(self):
+        jsaa = request.get_json()
+        host = jsaa['host_name']
+        print(host)
+        return {'bye': 'world'}
+
+
 api.add_resource(LoginHandler, '/login')
 api.add_resource(RegisterHandler, '/register')
 api.add_resource(GetActiveServicesHandler, '/getActiveServices')
@@ -53,6 +76,7 @@ api.add_resource(GetCustomersStatisticsHandler, '/getCustomersStatistics')
 api.add_resource(UpdateServiceStatusHandler, '/updateServiceStatus')
 api.add_resource(AdminUpdateServiceStatusHandler, '/adminUpdateServiceStatus')
 api.add_resource(AddNewWebsiteHandler, '/addNewWebsite')
+api.add_resource(UserProtectorHandler, '/userProtector')
 
 if __name__ == '__main__':
     app.run(debug=True)

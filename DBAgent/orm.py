@@ -27,20 +27,25 @@ class Server(SQLAlchemy.Item):
         self.time_stamp = time_stamp
 
 
-class Customer(SQLAlchemy.Item):
-    __tablename__ = "customers"
+class Users(SQLAlchemy.Item):
+    __tablename__ = "users"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    username = Column('username', String, unique=True, nullable=False)
+    email = Column('email', String, unique=True, nullable=False)
     password = Column('password', String, nullable=False)
     active = Column('active', Boolean, nullable=False, default=True)
-    time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
+    registered_on = Column('registered_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
+    is_admin = Column('is_admin', Boolean, nullable=False, default=True)
+    closed_on = Column('closed_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
-    def __init__(self, customer_id=None, username=None, password=None, active=None, time_stamp=None):
-        self.item_id = customer_id
-        self.username = username
+    def __init__(self, item_id=None, email=None, password=None, active=None, registered_on=None, is_admin=None,
+                 closed_on=None):
+        self.item_id = item_id
+        self.email = email
         self.password = password
         self.active = active
-        self.time_stamp = time_stamp
+        self.registered_on = registered_on
+        self.is_admin = is_admin
+        self.closed_on = closed_on
 
 
 class BlackList(SQLAlchemy.Item):
