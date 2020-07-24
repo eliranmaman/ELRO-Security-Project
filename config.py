@@ -1,9 +1,4 @@
-from random import Random
-
-from cryptography.hazmat.primitives.ciphers.algorithms import AES
-from cryptography.hazmat.primitives.hashes import SHA256
-
-# from DBAgent.sqlalchemy import SQLAlchemy
+from DBAgent.sqlalchemy import SQLAlchemy
 
 debug = True
 if debug:
@@ -18,7 +13,7 @@ else:
     }
 log_dict = "logs/"
 controller = None
-# db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
+db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
 data_path = "Data/"
 cookies_map = dict()
 brute_force_map = {
