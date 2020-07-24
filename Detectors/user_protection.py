@@ -16,6 +16,7 @@ def invoke_detector(func):
         is_detected = func(self, *args, **kwargs)
         if is_detected:
             self._UserProtectionResults.bit_map |= map_bit[func.__name__]
+            self._UserProtectionResults.security_alerts.append(bit_map_errors[map_bit[func.__name__]])
 
     return wrapper
 
@@ -26,7 +27,7 @@ class UserProtectionResults(object):
         self.bit_map = 0
         self.csrf_urls = []
         self.csrf_js_files = False
-        self.security_alerts = ["This is the first alert", "Second alert wow!!"]
+        self.security_alerts = []
 
 
 class UserProtectionDetector(object):
