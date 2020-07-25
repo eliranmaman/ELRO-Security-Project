@@ -32,7 +32,7 @@ class Bots(Detector):
         if check_pre_processing == Classification.Clean:
             return False
         # ------ This code will run if the path is in the forbidden list ------ #
-        user_agent = parsed_data["headers"].get('User-Agent', None)
+        user_agent = parsed_data.headers.get('User-Agent', None)
         if user_agent is None:
             return True
         self._bots_data["user_agent"] = user_agent
@@ -90,7 +90,7 @@ class Bots(Detector):
         :return: Classification Enum
         """
         # Cleaning the request path
-        req_path = parsed_data["path"].strip("/")
+        req_path = parsed_data.path.strip("/")
         for path in legitimate:
             if req_path in path:
                 return Classification.Clean

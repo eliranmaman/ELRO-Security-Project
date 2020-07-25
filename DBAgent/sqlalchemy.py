@@ -2,12 +2,10 @@
 Crypto issue: https://github.com/openthread/openthread/issues/1137
 Varname: https://github.com/pwwang/python-varname
 """
-import base64
 import json
 from functools import wraps
-from Crypto.Cipher import AES
-from Crypto.Hash import SHA256
-from Crypto import Random
+from http.client import HTTPMessage
+
 from cryptography.fernet import Fernet
 
 from sqlalchemy import create_engine
@@ -15,7 +13,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from DBAgent import DBHandler
 
-enc_list = ["content", "headers", "cookies", "password"]
+enc_list = []
 enc_key = b'tkBV4rY7gcEoWmpvqHZTvXExvuh8YsfhcdFUdBPzXeU='
 
 
@@ -49,7 +47,6 @@ def decrypt_item(func):
         item = func(self, *args, **kwargs)
         for attr, value in item.__dict__.items():
             if attr in enc_list:
-                print(attr, value)
                 item.__dict__[attr] = decrypt_data(value)
         return item
     return wrapper
@@ -92,12 +89,14 @@ class SQLAlchemy(DBHandler):
         self._connection = None
 
     def get_session(self):
+        self._session = sessionmaker(bind=self.__engine)()
         return self._session
 
     def commit(self):
         if self._session is None:
             return
         self._session.commit()
+        self._session = sessionmaker(bind=self.__engine)()
 
     @encrypt_item
     def add(self, item):
@@ -107,8 +106,12 @@ class SQLAlchemy(DBHandler):
     def insert(self, item):
         if self._session is None:
             return False
+        for attr, value in item.__dict__.items():
+            if type(value) is HTTPMessage:
+                item.__dict__[attr] = value.as_string()
         self._session.add(item)
         self.commit()
+        self._session = sessionmaker(bind=self.__engine)()
 
     @decrypt_item
     def decrypt(self, item):

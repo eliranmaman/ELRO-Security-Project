@@ -52,4 +52,5 @@ class HTTPResponseParser(Parser):
         parsed_data.from_server_id = self.__request.to_server_id
         parsed_data.to_ip = self.__request.from_ip
         parsed_data.time_stamp = datetime.now()
+        parsed_data.from_dns_name = self.__request.host_name
         return parsed_data

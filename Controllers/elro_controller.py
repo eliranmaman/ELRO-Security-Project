@@ -59,7 +59,6 @@ class ElroController(Controller):
         # Get list of detectors for the server
         parsed_request.to_server_id = self._server.item_id
         detectors = self._list_of_detectors(self._server.item_id)
-        print(detectors)
         validate = False
         print("E")
         for detector in detectors:

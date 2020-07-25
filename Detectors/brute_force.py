@@ -1,17 +1,18 @@
 import time
 
+from DBAgent.orm import BruteForceDataItem
 from Detectors import Detector, Sensitivity, Classification
-from config import brute_force_map as map
 
 
 # TODO: change brute_force_map to come from database
 # TODO: tests
+from config import db
+
 
 class BruteForce(Detector):
 
     def __init__(self):
         super().__init__()
-        self._data_map = map
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
@@ -31,8 +32,9 @@ class BruteForce(Detector):
             return True
         # ------ This code will run if the path is in the forbidden list ------ #
         req_path = parsed_data.path.strip("/")
-        client_ip = parsed_data["client_ip"]
-        last_request, counter = self._get_previous_request_info(client_ip, req_path)
+        client_ip = parsed_data.from_ip
+        bf_item = self._get_previous_request_info(client_ip, req_path, parsed_data.host_name)
+        last_request, counter = bf_item.time_stamp, bf_item.counter
         # Sensitivity will determinate the max_counter.
         if sensitivity == Sensitivity.Regular:
             max_counter = 10  # TODO: discuss about the const numbers.
@@ -43,23 +45,23 @@ class BruteForce(Detector):
         else:
             max_counter = 3
         # Check if the last request was more that 1min ago
+        bf_item.counter += 1
+        bf_item.time_stamp = time.time()
         if time.time() - last_request > 60:  # TODO: discuss about the const 1min.
-            self._data_map[client_ip][req_path] = (time.time(), 1)
-            return False
+            bf_item.counter = 0
         elif counter >= max_counter:
-            self._data_map[client_ip][req_path] = (time.time(), counter + 1)
+            db.commit()
             return True
         # --- The counter is < max_counter --- #
-        self._data_map[client_ip][req_path] = (time.time(), counter + 1)
+        db.commit()
         return False
 
-    def _get_previous_request_info(self, ip, path):
-        if ip not in self._data_map:
-            return time.time(), 0
-        elif path not in self._data_map[ip]:
-            return time.time(), 0
-        else:
-            return self._data_map[ip][path]
+    def _get_previous_request_info(self, ip, path, dns_name):
+        brute_force_data = db.get_session().query(BruteForceDataItem).filter_by(ip=ip, path=path, dns_name=dns_name).first()
+        if brute_force_data is None:
+            brute_force_data = BruteForceDataItem(ip=ip, dns_name=dns_name, path=path, counter=0, time_stamp=time.time())
+            db.insert(brute_force_data)
+        return brute_force_data
 
     def _is_forbidden(self, forbidden, parsed_data):
         """
@@ -68,8 +70,7 @@ class BruteForce(Detector):
         :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return: Classification Enum
         """
-        req_ip = parsed_data["client_ip"]
-        for req_ip in forbidden:
+        for parsed_data.from_ip in forbidden:
             return Classification.Detected
         return Classification.NoConclusion
 
@@ -82,13 +83,12 @@ class BruteForce(Detector):
         :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return: Classification Enum
         """
-        req_path = parsed_data["path"].strip("/")
-        req_ip = parsed_data["client_ip"]
-        request_data = "{}<=>{}".format(req_ip, req_path)
+        req_path = parsed_data.path.strip("/")
+        request_data = "{}<=>{}".format(parsed_data.from_ip, req_path)
         if request_data in legitimate:
             return Classification.Clean
         # For case that the ip has access for all the server path its will be ip only.
-        if req_ip in legitimate:
+        if parsed_data.from_ip in legitimate:
             return Classification.Clean
         return Classification.NoConclusion
 

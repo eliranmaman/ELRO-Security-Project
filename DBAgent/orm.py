@@ -1,12 +1,28 @@
 """
-This Class Design to create Relation mapping between the database to the Object Using SQL Alchemy.
+This Class Design to create Relaction maping between the database to the Object Using SQL Alchemy.
 Doc: https://docs.sqlalchemy.org/en/13/index.html
 Tutorial: https://docs.sqlalchemy.org/en/13/orm/tutorial.html
 """
 import datetime
+import time
+from functools import wraps
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Float
 
 from DBAgent.sqlalchemy import SQLAlchemy
+
+
+def to_json(item):
+    json_data = dict()
+    for attr, value in item.__dict__.items():
+        json_data[attr] = value
+    return json_data
+
+
+def from_json(json_data, obj):
+    for attr, value in json_data:
+        obj.__dict__[attr] = value
+    return obj
 
 
 class Server(SQLAlchemy.Item):
@@ -109,14 +125,15 @@ class HttpResponse(SQLAlchemy.Item):
     __tablename__ = "http_responses"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     request_id = Column('request_id', Integer, ForeignKey("http_requests.id"), nullable=False)
-    content = Column('content', String(1000), nullable=False, default='')
-    headers = Column('headers', String(1000), nullable=False, default='')
+    content = Column('content', String, nullable=False, default='')
+    headers = Column('headers', String, nullable=False, default='')
     status_code = Column('status_code', Integer, nullable=False)
-    cookies = Column('cookies', String(1000), nullable=False, default='')
+    cookies = Column('cookies', String, nullable=False, default='')
     is_redirect = Column('is_redirect', Boolean, nullable=False)
-    response_url = Column('response_url', String(1000), nullable=False)
+    response_url = Column('response_url', String, nullable=False)
     from_server_id = Column('from_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    to_ip = Column('to_ip', String(1000), nullable=False)
+    from_dns_name = Column('from_dns_name', String, nullable=False)
+    to_ip = Column('to_ip', String, nullable=False)
     decision = Column('decision', Boolean, nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -140,13 +157,13 @@ class HttpRequest(SQLAlchemy.Item):
     __tablename__ = "http_requests"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     response_id = Column('response_id', Integer, ForeignKey("http_responses.id"), nullable=False, default=1)
-    method = Column('method', String(1000), nullable=False)
-    content = Column('content', String(1000), nullable=False, default='')
-    headers = Column('headers', String(1000), nullable=False, default='')
-    path = Column('path', String(1000), nullable=False, default='/')
+    method = Column('method', String, nullable=False)
+    content = Column('content', String, nullable=False, default='')
+    headers = Column('headers', String, nullable=False, default='')
+    path = Column('path', String, nullable=False, default='/')
     to_server_id = Column('to_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    host_name = Column('host_name', String(1000), nullable=False)
-    from_ip = Column('from_ip', String(1000), nullable=False)
+    host_name = Column('host_name', String, nullable=False)
+    from_ip = Column('from_ip', String, nullable=False)
     decision = Column('decision', Boolean, nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -156,7 +173,7 @@ class HttpRequest(SQLAlchemy.Item):
         self.response_id = response_id
         self.method = method
         self.content = content
-        self.header = headers
+        self.headers = headers
         self.path = path
         self.host_name = host_name
         self.from_ip = from_ip
@@ -245,3 +262,37 @@ class MLDataResponse(SQLAlchemy.Item):
         self.response_id = response_id
         self.user_protection = user_protection
         self.xss_injection = xss_injection
+
+
+class CookiesToken(SQLAlchemy.Item):
+    __tablename__ = "cookie_token"
+    item_id = Column('id', Integer, primary_key=True, unique=True)
+    dns_name = Column('dns_name', String, nullable=False)
+    ip = Column('ip', String, nullable=False)
+    token = Column('token', String, nullable=False)
+    active = Column('active', Boolean, nullable=False, default=True)
+
+    def __init__(self, item_id=None, dns_name=None, ip=None, token=None, active=True):
+        self.item_id = item_id
+        self.dns_name = dns_name
+        self.ip = ip
+        self.token = token
+        self.active = active
+
+
+class BruteForceDataItem(SQLAlchemy.Item):
+    __tablename__ = "brute_force_data"
+    item_id = Column('id', Integer, primary_key=True, unique=True)
+    dns_name = Column('dns_name', String, nullable=False)
+    ip = Column('ip', String, nullable=False)
+    path = Column('token', String, nullable=False)
+    counter = Column('counter', Integer, default=0, nullable=False)
+    time_stamp = Column('time_stamp', Integer, nullable=False, default=time.time())
+
+    def __init__(self, item_id=None, dns_name=None, ip=None, path=None, counter=0, time_stamp=time.time()):
+        self.item_id = item_id
+        self.dns_name = dns_name
+        self.ip = ip
+        self.path = path
+        self.counter = counter
+        self.time_stamp = time_stamp

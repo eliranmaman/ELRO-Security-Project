@@ -45,7 +45,7 @@ class CSRF(Detector):
         :return: Classification Enum
         """
         # Cleaning the request path
-        req_path = parsed_data.path
+        req_path = parsed_data.path.strip("/")
         for path in legitimate:
             if req_path in path:
                 return Classification.Clean

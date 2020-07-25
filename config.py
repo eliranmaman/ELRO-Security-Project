@@ -17,9 +17,7 @@ db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
 db.connect()
 data_path = "Data/"
 cookies_map = dict()
-brute_force_map = {
-    "127.0.0.1": dict()
-}
+brute_force_map = dict()
 BOT_KEY = "f0ec0b2f185b868ac2f20988011328ec"
 BOTS_URL = "https://api.whatismybrowser.com/api/v2/"
 PROXY_DETECTOR_KEY = "4s1v32-419650-3730en-030383"
@@ -41,8 +39,8 @@ bit_map_errors = {
     16: "This site attempt to invoke Cross Site Requests (CSRF)",
 }
 
-url_regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s(" \
-            r")<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’])) "
+url_regex = "(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s(" \
+            ")<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’])) "
 
 enc_list = ["content", "headers", "cookies"]
 enc_key = b'&E)H@McQeThWmZq4t7w!z%C*F-JaNdRg'

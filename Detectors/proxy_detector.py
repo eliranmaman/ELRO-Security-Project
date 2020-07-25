@@ -14,24 +14,24 @@ class ProxyDetector(Detector):
         super().__init__()
         self._proxy_url = PROXY_DETECTOR_KEY_URL
 
-    def detect(self, request, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
+    def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
-        This method will try to detect requests that arrive from proxies, with pre define list & updated API that
+        This method will try to detect parsed_data that arrive from proxies, with pre define list & updated API that
         contains list of proxies.
-        :param request: send the full request object.
+        :param parsed_data: send the full HttpRequest object.
         :param sensitivity: The sensitivity of the detecting
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
         """
         # Pre Processing
-        check_pre_processing = self._pre_processing(forbidden, legitimate, request)
+        check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
             return False
         elif check_pre_processing == Classification.Detected:
             return True
         # ------ Start Detecting ------ #
-        client_ip = request.client_address[0]
+        client_ip = parsed_data.from_ip
         ip_data = self.__parse_ip_data(client_ip)
         if ip_data == Classification.Detected:
             return True
@@ -64,28 +64,28 @@ class ProxyDetector(Detector):
             return Classification.NoConclusion
         return Classification.Detected if proxy_detector_response["proxy"] == "yes" else Classification.Clean
 
-    def _is_legitimate(self, legitimate, request):
+    def _is_legitimate(self, legitimate, parsed_data):
         """
         This method is work on path access only.
         :param legitimate: list of legitimate ips, that are classified as Clean.
-        :param request: the original request.
+        :param parsed_data: the original HttpRequest.
         :return: Classification Enum
         """
         # Cleaning the request path
-        client_ip = request.client_address[0]
+        client_ip = parsed_data.from_ip
         if client_ip in legitimate:
             return Classification.Clean
         return Classification.NoConclusion
 
-    def _is_forbidden(self, forbidden, request):
+    def _is_forbidden(self, forbidden, parsed_data):
         """
         This method is work on path access only.
         :param forbidden: list of forbidden ips, that are classified as proxy.
-        :param request: the original request.
+        :param parsed_data: the original HttpRequest.
         :return: Classification Enum
         """
         # Cleaning the request path
-        client_ip = request.client_address[0]
+        client_ip = parsed_data.from_ip
         if client_ip in forbidden:
             return Classification.Detected
         return Classification.NoConclusion
