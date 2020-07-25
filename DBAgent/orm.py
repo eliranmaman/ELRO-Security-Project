@@ -5,10 +5,24 @@ Tutorial: https://docs.sqlalchemy.org/en/13/orm/tutorial.html
 """
 import datetime
 import time
+from functools import wraps
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Float
 
 from DBAgent.sqlalchemy import SQLAlchemy
+
+
+def to_json(item):
+    json_data = dict()
+    for attr, value in item.__dict__.items():
+        json_data[attr] = value
+    return json_data
+
+
+def from_json(json_data, obj):
+    for attr, value in json_data:
+        obj.__dict__[attr] = value
+    return obj
 
 
 class Server(SQLAlchemy.Item):
