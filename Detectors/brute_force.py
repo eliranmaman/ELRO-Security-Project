@@ -30,7 +30,7 @@ class BruteForce(Detector):
         elif check_pre_processing == Classification.Detected:
             return True
         # ------ This code will run if the path is in the forbidden list ------ #
-        req_path = parsed_data["path"].strip("/")
+        req_path = parsed_data.path.strip("/")
         client_ip = parsed_data["client_ip"]
         last_request, counter = self._get_previous_request_info(client_ip, req_path)
         # Sensitivity will determinate the max_counter.

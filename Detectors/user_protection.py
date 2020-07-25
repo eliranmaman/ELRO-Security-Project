@@ -1,6 +1,7 @@
 """
 TODO: Information, Tests.
 """
+import math
 import re
 from functools import wraps
 from urllib.parse import urlparse
@@ -13,9 +14,10 @@ map_bit = bit_map
 def invoke_detector(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        is_detected = func(self, *args, **kwargs)
-        if is_detected:
-            self._UserProtectionResults.bit_map |= map_bit[func.__name__]
+        if is_on(map_bit[func.__name__], self.bit_indicator):
+            is_detected = func(self, *args, **kwargs)
+            if is_detected:
+                self._UserProtectionResults.bit_map |= map_bit[func.__name__]
 
     return wrapper
 
@@ -28,6 +30,14 @@ class UserProtectionResults(object):
         self.csrf_js_files = False
 
 
+def is_on(index, bit):
+    if index == 0:
+        return 0
+    if index == 1:
+        return bit % 2 == 1
+    return bit >> int(math.log(index) / math.log(2)) == 1
+
+
 class UserProtectionDetector(object):
 
     def __init__(self, response):
@@ -36,12 +46,14 @@ class UserProtectionDetector(object):
         """
         self._UserProtectionResults = UserProtectionResults()
         self._response = response
+        self.bit_indicator = 0
 
-    def detect(self):
+    def detect(self, bit_indicator):
         """
         The method is the user interface for this class
         :return: UserProtectionResults Object.
         """
+        self.bit_indicator = bit_indicator
         self.__detect_script_files()
         self.__access_cookies()
         self.__iframe()
@@ -65,7 +77,8 @@ class UserProtectionDetector(object):
         "__detect_csrf_requests"
         :return: Boolean
         """
-        return self._response.headers.get('Content-Type', "").find("javascript") > 0 or self._UserProtectionResults.csrf_js_files
+        return self._response.headers.get('Content-Type', "").find(
+            "javascript") > 0 or self._UserProtectionResults.csrf_js_files
 
     @invoke_detector
     def __access_cookies(self):
@@ -104,5 +117,3 @@ class UserProtectionDetector(object):
             if request_url != host_uri:
                 self._UserProtectionResults.csrf_urls.append((host_uri, url))
         return len(self._UserProtectionResults.csrf_urls) > 0
-
-

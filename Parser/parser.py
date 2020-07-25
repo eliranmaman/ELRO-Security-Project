@@ -25,7 +25,8 @@ class BaseHTTPRequestParser(Parser):
         parsed_data.content = data_to_parse.rfile.read(content_length)
         parsed_data.headers = data_to_parse.headers
         parsed_data.path = "{}".format(data_to_parse.path)
-        parsed_data.host_name = "{}".format(data_to_parse.headers.get('HOST'))
+        parsed_data.host_name = "{}".format(data_to_parse.headers.get('HOST')).replace("www.", "")\
+            .replace("https://", "").replace("http", "")
         parsed_data.from_ip = data_to_parse.client_address[0]
         parsed_data.time_stamp = data_to_parse.log_date_time_string()
         return parsed_data

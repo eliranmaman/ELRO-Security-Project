@@ -3,14 +3,17 @@ import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 
+from Controllers import Controller
+from Controllers.elro_controller import ElroController
+from Detectors.csrf import CSRF
 from Detectors.user_protection import UserProtectionDetector
 from Parser import BaseHTTPRequestParser, Parser
-
+from Parser.parser import HTTPResponseParser
 
 from Proxy import Proxy
 from config import server
 from config import log_dict
-from Detectors import SQLDetector, BruteForce, BotsDetector, ProxyDetector
+from Detectors import SQLDetector, BruteForce, BotsDetector, ProxyDetector, XSSDetector, XMLDetector, CookiesPoisoning
 
 hostname2 = "www.elro-sec.com"
 
@@ -52,19 +55,39 @@ class BasicProxy(Proxy):
         def do_GET(self, body=True):
             sent = False
             try:
-                print("URL: {}".format(self.log_date_time_string()))
+                # print("URL: {}".format(self.log_date_time_string()))
                 url = 'https://{}{}'.format(hostname2, self.path)
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
-                req_header = self.parse_headers()
-                detector = BruteForce()
+                detectors = {
+                    "sql_detector": SQLDetector,
+                    "xss_detector": XSSDetector,
+                    "xml_detector": XMLDetector,
+                    "csrf_detector": CSRF,
+                    "cookie_poisoning_detector": CookiesPoisoning,
+                    "bruteforce_detector": BruteForce,
+                    "bots_detector": BotsDetector,
+                }
                 parser = BaseHTTPRequestParser()
-                parsed_data = parser.parse(self, Parser.DataType.Request, self.command)
+                print("A")
+                parsed_request = parser.parse(self)
+                controller = ElroController(detectors=detectors)
+                print("B")
+                response_code, send_to, new_request = controller.request_handler(parsed_request, self)
+                print("Request: ", response_code, send_to, new_request)
+                req_header = new_request.parse_headers()
+                # detector = BruteForce()
+                # parser = BaseHTTPRequestParser()
+                # parsed_data = parser.parse(self)
                 # check = detector.detect(parsed_data)
                 # print("Finish .....")
                 # else:
                 #     print("verify completed, Welcome back {}".format(self.client_address))
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
+                parser = HTTPResponseParser(parsed_request)
+                parsed_response = parser.parse(resp)
+                response_code, send_to, new_request = controller.response_handler(parsed_response, resp)
+                print("Response: ", response_code, send_to, new_request)
                 sent = True
                 # if resp.cookies and not check:
                 # secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
@@ -74,10 +97,8 @@ class BasicProxy(Proxy):
                 # cookie['Elro-Sec-Token'] = secret_value
                 # cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
                 # resp.headers["Set-Cookie"] = cookie
-                user_protect = UserProtectionDetector(resp)
-                what_detected = user_protect.detect()
-                detectedd = what_detected.bit_map > 0
-                if "text/html" in resp.headers.get('Content-Type', "") and detectedd:
+                # detectedd = what_detected.bit_map > 0
+                if "text/html" in resp.headers.get('Content-Type', "") and False:
                     new_content = resp.text
                     # print(new_content)
                     where_to_add = resp.text.find("</head>")
