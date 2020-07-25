@@ -12,15 +12,15 @@ from DBAgent.sqlalchemy import SQLAlchemy
 class Server(SQLAlchemy.Item):
     __tablename__ = "servers"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    customer_id = Column('customer_id', Integer, ForeignKey("customers.id"), nullable=False)
-    server_ip = Column('server_ip', String, unique=True, nullable=False)
-    server_dns = Column('server_dns', String, unique=True, nullable=False)
+    user_id = Column('user_id', Integer, ForeignKey("users.id"), nullable=False)
+    server_ip = Column('server_ip', String(1000), unique=True, nullable=False)
+    server_dns = Column('server_dns', String(1000), unique=True, nullable=False)
     active = Column('active', Boolean, nullable=False, default=True)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
-    def __init__(self, server_id=None, customer_id=None, server_ip=None, server_dns=None, active=None, time_stamp=None):
+    def __init__(self, server_id=None, user_id=None, server_ip=None, server_dns=None, active=None, time_stamp=None):
         self.item_id = server_id
-        self.customer_id = customer_id
+        self.user_id = user_id
         self.server_ip = server_ip
         self.server_dns = server_dns
         self.active = active
@@ -30,12 +30,12 @@ class Server(SQLAlchemy.Item):
 class Users(SQLAlchemy.Item):
     __tablename__ = "users"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    email = Column('email', String, unique=True, nullable=False)
-    password = Column('password', String, nullable=False)
+    email = Column('email', String(1000), unique=True, nullable=False)
+    password = Column('password', String(1000), nullable=False)
     active = Column('active', Boolean, nullable=False, default=True)
-    registered_on = Column('registered_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
-    is_admin = Column('is_admin', Boolean, nullable=False, default=True)
-    closed_on = Column('closed_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
+    registered_on = Column('registered_on', DateTime, nullable=False, default=datetime.datetime.utcnow())
+    is_admin = Column('is_admin', Boolean, nullable=False, default=False)
+    closed_on = Column('closed_on', DateTime, nullable=True)
 
     def __init__(self, item_id=None, email=None, password=None, active=None, registered_on=None, is_admin=None,
                  closed_on=None):
@@ -48,10 +48,39 @@ class Users(SQLAlchemy.Item):
         self.closed_on = closed_on
 
 
+class Services(SQLAlchemy.Item):
+    __tablename__ = "services"
+    item_id = Column('id', Integer, primary_key=True, unique=True)
+    user_id = Column('user_id', Integer, ForeignKey("users.id"), nullable=False)
+    sql_detector = Column('sql_detector', Boolean, nullable=False, default=True)
+    bots_detector = Column('bots_detector', Boolean, nullable=False, default=True)
+    xss_detector = Column('xss_detector', Boolean, nullable=False, default=True)
+    xml_detector = Column('xml_detector', Boolean, nullable=False, default=True)
+    csrf_detector = Column('csrf_detector', Boolean, nullable=False, default=True)
+    cookie_poisoning_detector = Column('cookie_poisoning_detector', Boolean, nullable=False, default=True)
+    bruteforce_detector = Column('bruteforce_detector', Boolean, nullable=False, default=True)
+    server_id = Column('server_id', Integer, ForeignKey("servers.id"), unique=True, nullable=False)
+    created_on = Column('created_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
+
+    def __init__(self, item_id=None, user_id=None, sql_detector=None, bots_detector=None, xss_detector=None, xml_detector=None,
+                 csrf_detector=None, cookie_poisoning_detector=None, bruteforce_detector=None, server_id=None, created_on=None):
+        self.item_id = item_id
+        self.user_id = user_id
+        self.sql_detector = sql_detector
+        self.bots_detector = bots_detector
+        self.xss_detector = xss_detector
+        self.xml_detector = xml_detector
+        self.csrf_detector = csrf_detector
+        self.cookie_poisoning_detector = cookie_poisoning_detector
+        self.bruteforce_detector = bruteforce_detector
+        self.server_id = server_id
+        self.created_on = created_on
+
+
 class BlackList(SQLAlchemy.Item):
     __tablename__ = "blacklist"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    ip = Column('password', String, nullable=False)
+    ip = Column('password', String(1000), nullable=False)
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -65,7 +94,7 @@ class BlackList(SQLAlchemy.Item):
 class WhiteList(SQLAlchemy.Item):
     __tablename__ = "whitelist"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    ip = Column('password', String, nullable=False)
+    ip = Column('password', String(1000), nullable=False)
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -80,14 +109,14 @@ class HttpResponse(SQLAlchemy.Item):
     __tablename__ = "http_responses"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     request_id = Column('request_id', Integer, ForeignKey("http_requests.id"), nullable=False)
-    content = Column('content', String, nullable=False, default='')
-    headers = Column('headers', String, nullable=False, default='')
+    content = Column('content', String(1000), nullable=False, default='')
+    headers = Column('headers', String(1000), nullable=False, default='')
     status_code = Column('status_code', Integer, nullable=False)
-    cookies = Column('cookies', String, nullable=False, default='')
+    cookies = Column('cookies', String(1000), nullable=False, default='')
     is_redirect = Column('is_redirect', Boolean, nullable=False)
-    response_url = Column('response_url', String, nullable=False)
+    response_url = Column('response_url', String(1000), nullable=False)
     from_server_id = Column('from_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    to_ip = Column('to_ip', String, nullable=False)
+    to_ip = Column('to_ip', String(1000), nullable=False)
     decision = Column('decision', Boolean, nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -111,13 +140,13 @@ class HttpRequest(SQLAlchemy.Item):
     __tablename__ = "http_requests"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     response_id = Column('response_id', Integer, ForeignKey("http_responses.id"), nullable=False, default=1)
-    method = Column('method', String, nullable=False)
-    content = Column('content', String, nullable=False, default='')
-    headers = Column('headers', String, nullable=False, default='')
-    path = Column('path', String, nullable=False, default='/')
+    method = Column('method', String(1000), nullable=False)
+    content = Column('content', String(1000), nullable=False, default='')
+    headers = Column('headers', String(1000), nullable=False, default='')
+    path = Column('path', String(1000), nullable=False, default='/')
     to_server_id = Column('to_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    host_name = Column('host_name', String, nullable=False)
-    from_ip = Column('from_ip', String, nullable=False)
+    host_name = Column('host_name', String(1000), nullable=False)
+    from_ip = Column('from_ip', String(1000), nullable=False)
     decision = Column('decision', Boolean, nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
