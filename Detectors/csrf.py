@@ -5,6 +5,10 @@ from Detectors import Detector, Sensitivity, Classification
 
 class CSRF(Detector):
 
+    def __init__(self):
+        super().__init__()
+        self.name = "csrf_detector"
+
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
         :param parsed_data: Parsed Data (from the parser module) of the request / response

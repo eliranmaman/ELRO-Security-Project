@@ -11,9 +11,11 @@ class XMLDetector(Detector):
     # TODO: adjust usage with legitimate and forbidden list - will we receive regex ?
     #  or only words? (especially in the legit list) - need to think on solution
     def __init__(self):
+        super().__init__()
         self.__forbidden = list()
         self.__flag = list()
         self.refresh()
+        self.name = "xml_detector"
 
     # if detected an attack attempt this method will return True and False otherwise
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):

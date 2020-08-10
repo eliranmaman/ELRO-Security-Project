@@ -75,7 +75,9 @@ class BasicProxy(Proxy):
                 print("B")
                 response_code, send_to, new_request = controller.request_handler(parsed_request, self)
                 print("Request: ", response_code, send_to, new_request)
+                #TODO: Not valid request
                 req_header = new_request.parse_headers()
+                print("DDD")
                 # detector = BruteForce()
                 # parser = BaseHTTPRequestParser()
                 # parsed_data = parser.parse(self)
@@ -86,7 +88,9 @@ class BasicProxy(Proxy):
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 parser = HTTPResponseParser(parsed_request)
                 parsed_response = parser.parse(resp)
+                print("******")
                 response_code, send_to, new_request = controller.response_handler(parsed_response, resp)
+                print("FFFF")
                 print("Response: ", response_code, send_to, new_request)
                 sent = True
                 # if resp.cookies and not check:
@@ -122,7 +126,7 @@ class BasicProxy(Proxy):
                     self.wfile.write(send_content)
                 return
             except Exception as e:
-                print(e)
+                print("Exception!!!!", e)
             finally:
                 self.finish()
                 if not sent:

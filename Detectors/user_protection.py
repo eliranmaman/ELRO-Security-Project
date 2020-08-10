@@ -28,6 +28,7 @@ class UserProtectionResults(object):
         self.bit_map = 0
         self.csrf_urls = []
         self.csrf_js_files = False
+        self.name = "user_protection"
 
 
 def is_on(index, bit):

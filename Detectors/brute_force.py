@@ -13,6 +13,7 @@ class BruteForce(Detector):
 
     def __init__(self):
         super().__init__()
+        self.name = "bruteforce_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """

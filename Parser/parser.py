@@ -1,6 +1,36 @@
 from datetime import datetime
 
-from DBAgent import HttpRequest, HttpResponse
+
+class HttpResponse(object):
+
+    def __init__(self, request_id=None, content=None, headers=None, status_code=None, cookies=None,
+                 is_redirect=None, response_url=None, from_server_id=None, to_ip=None, decision=None, time_stamp=None):
+        self.request_id = request_id
+        self.content = content
+        self.headers = headers
+        self.status_code = status_code
+        self.cookies = cookies
+        self.is_redirect = is_redirect
+        self.response_url = response_url
+        self.from_server_id = from_server_id
+        self.to_ip = to_ip
+        self.decision = decision
+        self.time_stamp = time_stamp
+
+
+class HttpRequest(object):
+
+    def __init__(self, method=None, content=None, headers=None, path=None,
+                 host_name=None, to_server_id=None, from_ip=None, decision=None, time_stamp=None):
+        self.method = method
+        self.content = content
+        self.headers = headers
+        self.path = path
+        self.host_name = host_name
+        self.from_ip = from_ip
+        self.to_server_id = to_server_id
+        self.decision = decision
+        self.time_stamp = time_stamp
 
 
 class Parser(object):
@@ -42,7 +72,6 @@ class HTTPResponseParser(Parser):
 
     def parse(self, data_to_parse):
         parsed_data = HttpResponse()
-        parsed_data.request_id = self.__request.item_id
         parsed_data.content = data_to_parse.text
         parsed_data.headers = data_to_parse.headers
         parsed_data.status_code = data_to_parse.status_code

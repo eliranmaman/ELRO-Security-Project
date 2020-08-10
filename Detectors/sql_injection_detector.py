@@ -9,9 +9,11 @@ class SqlInjection(Detector):
     __Forbidden_FILE = data_path+"/Detectors/SQLInjection/forbidden.json"
 
     def __init__(self):
+        super().__init__()
         self.__forbidden = list()
         self.__break_characters = list()
         self.refresh()
+        self.name = "sql_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """

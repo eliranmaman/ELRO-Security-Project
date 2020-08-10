@@ -15,6 +15,7 @@ class Bots(Detector):
         self._bots_url = "{}/user_agent_parse".format(BOTS_URL)
         self._bots_header = {"X-API-KEY": BOT_KEY}
         self._bots_data = {"parse_options": {}}
+        self.name = "bots_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
@@ -38,7 +39,6 @@ class Bots(Detector):
         self._bots_data["user_agent"] = user_agent
         user_agent_data = self.__parse_bots_data()
         is_detected = False
-        print(user_agent_data)
         # Start Check by the web sensitivity #
         # ----- Regular ----- #
         is_detected = is_detected or user_agent_data["is_restricted"] or  user_agent_data["is_abusive"]

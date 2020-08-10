@@ -89,14 +89,12 @@ class SQLAlchemy(DBHandler):
         self._connection = None
 
     def get_session(self):
-        self._session = sessionmaker(bind=self.__engine)()
         return self._session
 
     def commit(self):
         if self._session is None:
             return
         self._session.commit()
-        self._session = sessionmaker(bind=self.__engine)()
 
     @encrypt_item
     def add(self, item):
@@ -111,7 +109,6 @@ class SQLAlchemy(DBHandler):
                 item.__dict__[attr] = value.as_string()
         self._session.add(item)
         self.commit()
-        self._session = sessionmaker(bind=self.__engine)()
 
     @decrypt_item
     def decrypt(self, item):

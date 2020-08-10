@@ -1,6 +1,6 @@
 import re
 
-from DBAgent import HttpRequest, CookiesToken
+from DBAgent import CookiesToken
 from Detectors import Detector, Sensitivity, Classification
 from Detectors.detectors_config import token_regex
 from config import db
@@ -10,6 +10,10 @@ from config import db
 
 
 class CookiesPoisoning(Detector):
+
+    def __init__(self):
+        super().__init__()
+        self.name = "cookie_poisoning_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """

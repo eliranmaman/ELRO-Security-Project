@@ -13,6 +13,7 @@ class ProxyDetector(Detector):
     def __init__(self):
         super().__init__()
         self._proxy_url = PROXY_DETECTOR_KEY_URL
+        self.name = "proxy_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """

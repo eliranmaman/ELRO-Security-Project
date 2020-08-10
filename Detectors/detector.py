@@ -20,6 +20,7 @@ class Detector(object):
 
     def __init__(self):
         self._forbidden = []
+        self.name = None
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
