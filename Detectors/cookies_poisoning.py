@@ -6,9 +6,6 @@ from Detectors.detectors_config import token_regex
 from config import db
 
 
-# TODO: tests
-
-
 class CookiesPoisoning(Detector):
 
     def __init__(self):
@@ -30,7 +27,7 @@ class CookiesPoisoning(Detector):
         elif check_pre_processing == Classification.Clean:
             return False
         # Getting the request Cookies (e.g same-origin)
-        return not self._check_cookie_is_authorized(parsed_data)
+        return self._check_cookie_is_authorized(parsed_data)
 
     def _check_cookie_is_authorized(self, parsed_data):
         """
@@ -39,17 +36,18 @@ class CookiesPoisoning(Detector):
         :return:
         """
         cookies = parsed_data.headers.get("Cookie", None)
+        print(cookies)
         if cookies is None:
             return False
         cookies_token = db.get_session().query(CookiesToken).\
             filter_by(active=True, ip=parsed_data.from_ip, dns_name=parsed_data.host_name).first()
         if cookies_token is None:
-            return True
+            return False
         m = re.match(token_regex, cookies)
         if m is None:
-            return False
+            return True
         secret_value = m.group(1)
-        check = secret_value == cookies_token.token
+        check = secret_value != cookies_token.token
         return check
 
     def _is_legitimate(self, legitimate, parsed_data):
