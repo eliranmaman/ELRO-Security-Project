@@ -15,7 +15,7 @@ from config import server
 from config import log_dict
 from Detectors import SQLDetector, BruteForce, BotsDetector, ProxyDetector, XSSDetector, XMLDetector, CookiesPoisoning
 
-hostname2 = "www.elro-sec.com"
+hostname2 = "www.google.com"
 
 sys.stderr = open(log_dict + "/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
@@ -56,7 +56,6 @@ class BasicProxy(Proxy):
             sent = False
             try:
                 # print("URL: {}".format(self.log_date_time_string()))
-                url = 'https://{}{}'.format(hostname2, self.path)
                 # content_len = int(self.headers.get('content-length', 0))
                 # post_body = self.rfile.read(content_len).decode("utf-8")
                 detectors = {
@@ -73,7 +72,7 @@ class BasicProxy(Proxy):
                 parsed_request = parser.parse(self)
                 controller = ElroController(detectors=detectors)
                 print("B")
-                response_code, send_to, new_request = controller.request_handler(parsed_request, self)
+                response_code, send_to, new_request, parsed_request = controller.request_handler(parsed_request, self)
                 print("Request: ", response_code, send_to, new_request)
                 #TODO: Not valid request
                 req_header = new_request.parse_headers()
@@ -85,6 +84,7 @@ class BasicProxy(Proxy):
                 # print("Finish .....")
                 # else:
                 #     print("verify completed, Welcome back {}".format(self.client_address))
+                url = 'https://{}{}'.format(parsed_request.host_name, self.path)
                 resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
                 parser = HTTPResponseParser(parsed_request)
                 parsed_response = parser.parse(resp)

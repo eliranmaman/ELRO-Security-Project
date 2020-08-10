@@ -36,13 +36,14 @@ class CookiesPoisoning(Detector):
         :return:
         """
         cookies = parsed_data.headers.get("Cookie", None)
-        print(cookies)
         if cookies is None:
             return False
+        print(cookies)
         cookies_token = db.get_session().query(CookiesToken).\
             filter_by(active=True, ip=parsed_data.from_ip, dns_name=parsed_data.host_name).first()
         if cookies_token is None:
-            return False
+            print("No cookie!!!!")
+            return True
         m = re.match(token_regex, cookies)
         if m is None:
             return True
