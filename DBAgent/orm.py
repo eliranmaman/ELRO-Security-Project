@@ -1,5 +1,5 @@
 """
-This Class Design to create Relaction maping between the database to the Object Using SQL Alchemy.
+This Class Design to create Relation mapping between the database to the Object Using SQL Alchemy.
 Doc: https://docs.sqlalchemy.org/en/13/index.html
 Tutorial: https://docs.sqlalchemy.org/en/13/orm/tutorial.html
 """
@@ -10,24 +10,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, F
 from DBAgent.sqlalchemy import SQLAlchemy
 
 
-def to_json(item, ignore_list=None):
-    ignore_list = list() if ignore_list is None else ignore_list
-    json_data = dict()
-    for attr, value in item.__dict__.items():
-        if "_sa_instance_state" in attr or attr in ignore_list:
-            continue
-        json_data[attr] = str(value)
-
-    return json_data
-
-
-def from_json(json_data, obj):
-    for attr, value in json_data.items():
-        obj.__dict__[attr] = value
-    return obj
-
-
-class Server(SQLAlchemy.Item):
+class Servers(SQLAlchemy.Item):
     __tablename__ = "servers"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     user_id = Column('user_id', Integer, ForeignKey("users.id"), nullable=False)
@@ -70,13 +53,13 @@ class Services(SQLAlchemy.Item):
     __tablename__ = "services"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     user_id = Column('user_id', Integer, ForeignKey("users.id"), nullable=False)
-    sql_detector = Column('sql_detector', Boolean, nullable=False, default=True)
-    bots_detector = Column('bots_detector', Boolean, nullable=False, default=True)
-    xss_detector = Column('xss_detector', Boolean, nullable=False, default=True)
-    xml_detector = Column('xml_detector', Boolean, nullable=False, default=True)
-    csrf_detector = Column('csrf_detector', Boolean, nullable=False, default=True)
-    cookie_poisoning_detector = Column('cookie_poisoning_detector', Boolean, nullable=False, default=True)
-    bruteforce_detector = Column('bruteforce_detector', Boolean, nullable=False, default=True)
+    sql_detector = Column('sql_detector', Integer, nullable=False, default=True)
+    bots_detector = Column('bots_detector', Integer, nullable=False, default=True)
+    xss_detector = Column('xss_detector', Integer, nullable=False, default=True)
+    xml_detector = Column('xml_detector', Integer, nullable=False, default=True)
+    csrf_detector = Column('csrf_detector', Integer, nullable=False, default=True)
+    cookie_poisoning_detector = Column('cookie_poisoning_detector', Integer, nullable=False, default=True)
+    bruteforce_detector = Column('bruteforce_detector', Integer, nullable=False, default=True)
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), unique=True, nullable=False)
     created_on = Column('created_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
