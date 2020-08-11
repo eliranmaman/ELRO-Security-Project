@@ -8,7 +8,7 @@ from DBAgent import Server
 from DBAgent.orm import Services, WhiteList, BlackList, DetectorRequestData, DetectorDataResponse, to_json, CookiesToken
 from Data.enums.controller_enums import ControllerResponseCode, RedirectAnswerTo, IsAuthorized
 from Detectors.user_protection import UserProtectionDetector
-from config import db
+from config import db, blocked_path, blocked_url
 
 
 def handle_block(func):
@@ -16,19 +16,31 @@ def handle_block(func):
     def wrapper(self, *args, **kwargs):
         response_code, redirect_to, the_request, parsed_request = func(self, *args, **kwargs)
         if response_code == ControllerResponseCode.NotValid:
-            parsed_request.host_name = "elro-sec.com"
-            parsed_request.path = "/blocked.html"
-            the_request.headers.replace_header("Host", "elro-sec.com")
-            the_request.path = "/blocked.html"
-            # TODO:
-            """
-            Misdirected Request
-            The client needs a new connection for this
-            request as the requested host name does not match
-            the Server Name Indication (SNI) in use for this
-            connection.
-            """
+            parsed_request.host_name = blocked_url
+            parsed_request.path = blocked_path
         return response_code, redirect_to, the_request, parsed_request
+
+    return wrapper
+
+
+def modify_response(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        detector_result, redirect_to, the_response = func(self, *args, **kwargs)
+        if detector_result.bit_map == 0 or "text/html" not in the_response.headers.get('Content-Type', ""):
+            return ControllerResponseCode.Valid, redirect_to, the_response.content
+        with open("C:/Users/elira/Desktop/לימודים/פרויקט גמר/elro-sec/Controllers/safe_place.html", "r") as file:
+            new_content = file.read()
+        to_add = "".join(["<li>{}</li>".format(i) for i in detector_result.detected_alerts])
+        new_content = new_content.replace("#Activites#", to_add, 1)
+        new_content = new_content.replace("#OriginalLocation#", str(self._request.path), 1)
+        new_cookie_value = cookies.SimpleCookie()
+        new_cookie_value['Elro-Sec-Bit'] = "{}@Elro-Sec-End".format(self._bit_indicator ^ detector_result.bit_map)
+        new_cookie_value['Elro-Sec-Bit']['max-age'] = 2592000  # 30 days
+        new_content = new_content.replace("#NewBitValue#", str(new_cookie_value).replace("Set-Cookie:", "", 1))
+        send_content = bytes(new_content.encode('utf_8'))
+        return ControllerResponseCode.NotValid, redirect_to, send_content
+
     return wrapper
 
 
@@ -43,10 +55,10 @@ class ElroController(Controller):
         self._response = None
         self._request_data = None
         self.response_cookie = None
+        self._bit_indicator = 255
 
     @handle_block
     def request_handler(self, parsed_request, original_request):
-        print("B")
         self._request_data = DetectorRequestData(from_ip=parsed_request.from_ip)
         self._request = parsed_request
         session = db.get_session()
@@ -55,7 +67,6 @@ class ElroController(Controller):
         if self._server is None:
             return ControllerResponseCode.Failed, RedirectAnswerTo.Client, original_request, parsed_request
         # check if authorized requester.
-        print("C")
         self._request_data.to_server_id = self._server.item_id
         is_authorized = self._is_authorized(parsed_request.from_ip)
         if is_authorized == IsAuthorized.Yes:
@@ -70,15 +81,14 @@ class ElroController(Controller):
         parsed_request.to_server_id = self._server.item_id
         detectors = self._list_of_detectors(self._server.item_id)
         validate = False
-        print("E")
         for detector_constructor in detectors:
             detector = detector_constructor()
-            print(detector.name)
             validate = detector.detect(parsed_request)
-            if detector.name == "1cookie_poisoning_detector" and validate:
+            if detector.name == "cookie_poisoning_detector" and validate:
                 # Detected => Removing cookies.
+                print("Removing?")
                 original_request.headers.replace_header("Cookie", "")
-            elif detector.name == "1cookie_poisoning_detector":
+            elif detector.name == "cookie_poisoning_detector":
                 # Creating new token
                 self.response_cookie = CookiesToken(dns_name=parsed_request.host_name, ip=parsed_request.from_ip,
                                                     active=True, token=secrets.token_hex(256))
@@ -93,18 +103,21 @@ class ElroController(Controller):
         db.insert(self._request_data)
         return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
 
+    @modify_response
     def response_handler(self, parsed_response, original_response):
         self._response = parsed_response
         parsed_response.from_server_id = self._server.item_id
         res_cookies = self._request.headers.get("Cookie", "")
-        m = re.match(".*?Elro-Sec-Bit=.*\"(.*?)@Elro-Sec-End", res_cookies)
-        bit_indicator = 256 if m is None else int(m.group(1))
+        # print(res_cookies)
+        m = re.match(".*?Elro-Sec-Bit=.*\"(\d*)@Elro-Sec-End", res_cookies)
+        self._bit_indicator = 255 if m is None else int(m.group(1))
         user_protection = UserProtectionDetector(parsed_response)
-        results = user_protection.detect(bit_indicator)
+        results = user_protection.detect(self._bit_indicator)
         detector_data = DetectorDataResponse(request_id=self._request_data.item_id,
                                              from_server_id=parsed_response.from_server_id,
                                              to_ip=parsed_response.to_ip)
         db.insert(detector_data)
+        cookies_to_add = str()
         if type(self.response_cookie) is CookiesToken:
             # Find the old token
             session = db.get_session()
@@ -117,12 +130,21 @@ class ElroController(Controller):
             # Insert the new token
             db.insert(self.response_cookie)
             # Update the response with the new token.
-            cookie = cookies.SimpleCookie()
-            cookie['Elro-Sec-Token'] = "{}@Elro-Sec-End".format(self.response_cookie.token)
-            cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
-            original_response.headers["Set-Cookie"] = cookie
-        # TODO: add user notification to the response
-        return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_response
+            token_cookie = cookies.SimpleCookie()
+            token_cookie['Elro-Sec-Token'] = "{}@Elro-Sec-End".format(self.response_cookie.token)
+            token_cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
+            cookies_to_add += str(token_cookie).replace("Set-Cookie:", "", 1)
+            cookies_to_add += "\n"
+        # User Protection Bit
+        if m is None:
+            bit_cookie = cookies.SimpleCookie()
+            bit_cookie['Elro-Sec-Bit'] = "{}@Elro-Sec-End".format(self._bit_indicator)
+            bit_cookie['Elro-Sec-Bit']['max-age'] = 2592000  # 30 days
+            bit_cookie = str(bit_cookie)
+            cookies_to_add += bit_cookie if len(cookies_to_add) > 0 else bit_cookie.replace("Set-Cookie:", "", 1)
+        original_response.headers["Set-Cookie"] = cookies_to_add
+        #TODO: Remove old cookies of bit map && token.
+        return results, RedirectAnswerTo.Client, original_response
 
     def _is_authorized(self, requester_ip):
         """

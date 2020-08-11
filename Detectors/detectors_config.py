@@ -3,4 +3,4 @@ Cookie Poisoning Config
 """
 
 
-token_regex = ".*?Elro-Sec-Token=.*\"(.*?)@Elro-Sec-End"
+token_regex = ".*?Elro-Sec-Token=.*\"(.*?)@Elro-Sec-End\";"

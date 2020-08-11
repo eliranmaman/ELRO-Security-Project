@@ -5,6 +5,7 @@ import requests
 
 from Controllers import Controller
 from Controllers.elro_controller import ElroController
+from Data.enums.controller_enums import ControllerResponseCode
 from Detectors.csrf import CSRF
 from Detectors.user_protection import UserProtectionDetector
 from Parser import BaseHTTPRequestParser, Parser
@@ -73,7 +74,7 @@ class BasicProxy(Proxy):
                 controller = ElroController(detectors=detectors)
                 print("B")
                 response_code, send_to, new_request, parsed_request = controller.request_handler(parsed_request, self)
-                print("Request: ", response_code, send_to, new_request)
+                # print("Request: ", response_code, send_to, new_request)
                 #TODO: Not valid request
                 req_header = new_request.parse_headers()
                 print("DDD")
@@ -84,49 +85,58 @@ class BasicProxy(Proxy):
                 # print("Finish .....")
                 # else:
                 #     print("verify completed, Welcome back {}".format(self.client_address))
-                url = 'https://{}{}'.format(parsed_request.host_name, self.path)
-                resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
-                parser = HTTPResponseParser(parsed_request)
-                parsed_response = parser.parse(resp)
-                print("******")
-                response_code, send_to, new_request = controller.response_handler(parsed_response, resp)
-                print("FFFF")
-                print("Response: ", response_code, send_to, new_request)
-                sent = True
-                # if resp.cookies and not check:
-                # secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
-                # key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
-                # cookies_map[key] = secret_value
-                # cookie = cookies.SimpleCookie()
-                # cookie['Elro-Sec-Token'] = secret_value
-                # cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
-                # resp.headers["Set-Cookie"] = cookie
-                # detectedd = what_detected.bit_map > 0
-                if "text/html" in resp.headers.get('Content-Type', "") and False:
-                    new_content = resp.text
-                    # print(new_content)
-                    where_to_add = resp.text.find("</head>")
-                    send_content = new_content[:where_to_add] + "<script>" \
-                                                                "var is_confirm = confirm('This site contain...." \
-                                                                " Do you eant to stop the page loading?');" \
-                                                                "if(is_confirm) alert('confirmed');" \
-                                                                "else window.location.href='https://www.elro-sec.com/safe_place.html'" \
-                                                                "</script>" + \
-                                   new_content[where_to_add:]
-                    send_content = bytes(send_content.encode('utf_8'))
+                url = 'https://{}{}'.format("google.com", parsed_request.path)
+                if response_code == ControllerResponseCode.NotValid:
+                    self.send_response(302)
+                    self.send_header('Location', url)
+                    self.end_headers()
                 else:
-                    send_content = resp.content
-                resp.headers['Content-Length'] = "{}".format(len(send_content))
-                # print("{}".format(resp.headers))
-                self.send_response(resp.status_code)
-                self.send_resp_headers(resp)
-                # print(send_content)
-                print(self.client_address)
-                if body:
-                    self.wfile.write(send_content)
-                return
+                    resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
+                    parser = HTTPResponseParser(parsed_request)
+                    parsed_response = parser.parse(resp)
+                    print("******")
+                    response_code, send_to, new_content = controller.response_handler(parsed_response, resp)
+                    if response_code == ControllerResponseCode.NotValid:
+                        send_content = new_content
+                    else:
+                        send_content = resp.content
+                    print("FFFF")
+                    # print("Response: ", response_code, send_to, new_request)
+                    sent = True
+                    # if resp.cookies and not check:
+                    # secret_value = "{}@Elro-Sec-End".format(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(100)))
+                    # key = detector.generate_key(self.client_address[0], self.headers.get('Host', "elro-sec.com"))
+                    # cookies_map[key] = secret_value
+                    # cookie = cookies.SimpleCookie()
+                    # cookie['Elro-Sec-Token'] = secret_value
+                    # cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
+                    # resp.headers["Set-Cookie"] = cookie
+                    # detectedd = what_detected.bit_map > 0
+                    # if "text/html" in resp.headers.get('Content-Type', "") and False:
+                    #     new_content = resp.text
+                    #     # print(new_content)
+                    #     where_to_add = resp.text.find("</head>")
+                    #     send_content = new_content[:where_to_add] + "<script>" \
+                    #                                                 "var is_confirm = confirm('This site contain...." \
+                    #                                                 " Do you eant to stop the page loading?');" \
+                    #                                                 "if(is_confirm) alert('confirmed');" \
+                    #                                                 "else window.location.href='https://www.elro-sec.com/safe_place.html'" \
+                    #                                                 "</script>" + \
+                    #                    new_content[where_to_add:]
+                    #     send_content = bytes(send_content.encode('utf_8'))
+                    # else:
+                    #     send_content = resp.content
+                    resp.headers['Content-Length'] = "{}".format(len(send_content))
+                    # print("{}".format(resp.headers))
+                    self.send_response(resp.status_code)
+                    self.send_resp_headers(resp)
+                    # print(send_content)
+                    print(self.client_address)
+                    if body:
+                        self.wfile.write(send_content)
+                    return
             except Exception as e:
-                print("Exception!!!!", e)
+                print("EXCEPTIONNNNN", e)
             finally:
                 self.finish()
                 if not sent:

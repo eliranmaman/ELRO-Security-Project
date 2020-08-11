@@ -6,7 +6,7 @@ import re
 from functools import wraps
 from urllib.parse import urlparse
 
-from config import bit_map, url_regex
+from config import bit_map, url_regex, bit_map_errors
 
 map_bit = bit_map
 
@@ -18,7 +18,9 @@ def invoke_detector(func):
             is_detected = func(self, *args, **kwargs)
             if is_detected:
                 self._UserProtectionResults.bit_map |= map_bit[func.__name__]
-
+                print(self._UserProtectionResults.bit_map)
+                self._UserProtectionResults.detected_alerts.append(bit_map_errors[map_bit[func.__name__]])
+                print("Done")
     return wrapper
 
 
@@ -28,15 +30,18 @@ class UserProtectionResults(object):
         self.bit_map = 0
         self.csrf_urls = []
         self.csrf_js_files = False
+        self.detected_alerts = []
         self.name = "user_protection"
 
 
 def is_on(index, bit):
+    print("Index: ", index, "Res: ", (bit >> int(math.log(index) / math.log(2))))
     if index == 0:
         return 0
     if index == 1:
         return bit % 2 == 1
-    return bit >> int(math.log(index) / math.log(2)) == 1
+    index = int(math.log(index) / math.log(2))
+    return (bit >> index) % 2
 
 
 class UserProtectionDetector(object):
@@ -55,10 +60,15 @@ class UserProtectionDetector(object):
         :return: UserProtectionResults Object.
         """
         self.bit_indicator = bit_indicator
+        print("__detect_script_files")
         self.__detect_script_files()
+        print("__access_cookies")
         self.__access_cookies()
+        print("__iframe")
         self.__iframe()
+        print("__detect_csrf_requests")
         self.__detect_csrf_requests()
+        print("__detect_inline_scripts")
         self.__detect_inline_scripts()
         return self._UserProtectionResults
 
@@ -106,8 +116,8 @@ class UserProtectionDetector(object):
         This method has high value of False Positive.
         :return: Boolean
         """
-        request_url = urlparse(self._response.request.url)
-        request_url = '{uri.netloc}'.format(uri=request_url).replace("www.", "")
+        response_url = urlparse(self._response.response_url)
+        response_url = '{uri.netloc}'.format(uri=response_url).replace("www.", "")
         urls = re.findall(url_regex, self._response.text)
         for url in urls:
             url = url[0]
@@ -115,6 +125,6 @@ class UserProtectionDetector(object):
             if not self._UserProtectionResults.csrf_js_files:
                 self._UserProtectionResults.csrf_js_files = '{uri.path}'.format(uri=parsed_uri).find('.js') > 0
             host_uri = '{uri.netloc}'.format(uri=parsed_uri).replace("www.", "")
-            if request_url != host_uri:
+            if response_url != host_uri:
                 self._UserProtectionResults.csrf_urls.append((host_uri, url))
         return len(self._UserProtectionResults.csrf_urls) > 0

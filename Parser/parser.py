@@ -3,8 +3,9 @@ from datetime import datetime
 
 class HttpResponse(object):
 
-    def __init__(self, request_id=None, content=None, headers=None, status_code=None, cookies=None,
+    def __init__(self, request_id=None, content=None, headers=None, status_code=None, cookies=None, original=None,
                  is_redirect=None, response_url=None, from_server_id=None, to_ip=None, decision=None, time_stamp=None):
+        self.original = original
         self.request_id = request_id
         self.content = content
         self.headers = headers
@@ -31,6 +32,7 @@ class HttpRequest(object):
         self.to_server_id = to_server_id
         self.decision = decision
         self.time_stamp = time_stamp
+        self.text = None
 
 
 class Parser(object):
@@ -72,6 +74,8 @@ class HTTPResponseParser(Parser):
 
     def parse(self, data_to_parse):
         parsed_data = HttpResponse()
+        parsed_data.original = data_to_parse
+        parsed_data.text = data_to_parse.text
         parsed_data.content = data_to_parse.text
         parsed_data.headers = data_to_parse.headers
         parsed_data.status_code = data_to_parse.status_code
