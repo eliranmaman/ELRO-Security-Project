@@ -17,6 +17,7 @@ enc_key = b'tkBV4rY7gcEoWmpvqHZTvXExvuh8YsfhcdFUdBPzXeU='
 def encrypt_data(value):
     cipher_suite = Fernet(enc_key)
     cipher_text = cipher_suite.encrypt(value.encode('utf-8'))
+    print(cipher_text.decode('utf-8'))
     return cipher_text.decode('utf-8')
 
 
@@ -44,7 +45,6 @@ def decrypt_item(func):
         item = func(self, *args, **kwargs)
         for attr, value in item.__dict__.items():
             if attr in enc_list:
-                print(attr, value)
                 item.__dict__[attr] = decrypt_data(value)
         return item
     return wrapper
@@ -89,25 +89,35 @@ class SQLAlchemy(DBHandler):
         self._connection = None
 
     def get_session(self):
+        self._session = sessionmaker(bind=self.__engine)()
         return self._session
 
     def commit(self):
         if self._session is None:
             return
-        self._session.commit()
+        try:
+            self._session.commit()
+        except Exception as e:
+            self._session.rollback()
 
     @encrypt_item
     def add(self, item):
         if self._session is None:
             return
-        self._session.add(item)
+        try:
+            self._session.add(item)
+        except Exception as e:
+            self._session.rollback()
 
     @encrypt_item
     def insert(self, item):
         if self._session is None:
             return False
-        self._session.add(item)
-        self.commit()
+        try:
+            self._session.add(item)
+            self.commit()
+        except Exception as e:
+            self._session.rollback()
 
     @decrypt_item
     def decrypt(self, item):

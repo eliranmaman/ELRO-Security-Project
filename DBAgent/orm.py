@@ -9,7 +9,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, F
 from DBAgent.sqlalchemy import SQLAlchemy
 
 
-class Server(SQLAlchemy.Item):
+class Servers(SQLAlchemy.Item):
     __tablename__ = "servers"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     user_id = Column('user_id', Integer, ForeignKey("users.id"), nullable=False)
@@ -52,13 +52,13 @@ class Services(SQLAlchemy.Item):
     __tablename__ = "services"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     user_id = Column('user_id', Integer, ForeignKey("users.id"), nullable=False)
-    sql_detector = Column('sql_detector', Boolean, nullable=False, default=True)
-    bots_detector = Column('bots_detector', Boolean, nullable=False, default=True)
-    xss_detector = Column('xss_detector', Boolean, nullable=False, default=True)
-    xml_detector = Column('xml_detector', Boolean, nullable=False, default=True)
-    csrf_detector = Column('csrf_detector', Boolean, nullable=False, default=True)
-    cookie_poisoning_detector = Column('cookie_poisoning_detector', Boolean, nullable=False, default=True)
-    bruteforce_detector = Column('bruteforce_detector', Boolean, nullable=False, default=True)
+    sql_detector = Column('sql_detector', Integer, nullable=False, default=True)
+    bots_detector = Column('bots_detector', Integer, nullable=False, default=True)
+    xss_detector = Column('xss_detector', Integer, nullable=False, default=True)
+    xml_detector = Column('xml_detector', Integer, nullable=False, default=True)
+    csrf_detector = Column('csrf_detector', Integer, nullable=False, default=True)
+    cookie_poisoning_detector = Column('cookie_poisoning_detector', Integer, nullable=False, default=True)
+    bruteforce_detector = Column('bruteforce_detector', Integer, nullable=False, default=True)
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), unique=True, nullable=False)
     created_on = Column('created_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
 

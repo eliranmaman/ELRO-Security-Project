@@ -5,7 +5,7 @@ import re
 from functools import wraps
 from urllib.parse import urlparse
 
-from config import bit_map, url_regex
+from config import bit_map, url_regex, bit_map_errors
 
 map_bit = bit_map
 
