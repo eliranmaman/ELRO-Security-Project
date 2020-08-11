@@ -109,9 +109,9 @@ class WhiteList(SQLAlchemy.Item):
 class DetectorRequestData(SQLAlchemy.Item):
     __tablename__ = "detectors_requests_data"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    detected = Column('detected', String, nullable=False, default="none")
+    detected = Column('detected', String(1000), nullable=False, default="none")
     to_server_id = Column('to_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    from_ip = Column('from_ip', String, nullable=False)
+    from_ip = Column('from_ip', String(1000), nullable=False)
 
     def __init__(self, item_id=None, detected=None, to_server_id=None, from_ip=None):
         self.item_id = item_id
@@ -124,9 +124,9 @@ class DetectorDataResponse(SQLAlchemy.Item):
     __tablename__ = "detectors_data_responses"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     request_id = Column('request_id', Integer, ForeignKey("detectors_requests_data.id"), nullable=False)
-    detected = Column('detected', String, nullable=False, default="none")
+    detected = Column('detected', String(1000), nullable=False, default="none")
     from_server_id = Column('from_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    to_ip = Column('to_ip', String, nullable=False)
+    to_ip = Column('to_ip', String(1000), nullable=False)
 
     def __init__(self, item_id=None, request_id=None, detected=None, from_server_id=None, to_ip=None):
         self.item_id = item_id
@@ -139,9 +139,9 @@ class DetectorDataResponse(SQLAlchemy.Item):
 class CookiesToken(SQLAlchemy.Item):
     __tablename__ = "cookie_token"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    dns_name = Column('dns_name', String, nullable=False)
-    ip = Column('ip', String, nullable=False)
-    token = Column('token', String, nullable=False)
+    dns_name = Column('dns_name', String(1000), nullable=False)
+    ip = Column('ip', String(1000), nullable=False)
+    token = Column('token', String(1000), nullable=False)
     active = Column('active', Boolean, nullable=False, default=True)
 
     def __init__(self, item_id=None, dns_name=None, ip=None, token=None, active=True):
@@ -155,9 +155,9 @@ class CookiesToken(SQLAlchemy.Item):
 class BruteForceDataItem(SQLAlchemy.Item):
     __tablename__ = "brute_force_data"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    dns_name = Column('dns_name', String, nullable=False)
-    ip = Column('ip', String, nullable=False)
-    path = Column('token', String, nullable=False)
+    dns_name = Column('dns_name', String(1000), nullable=False)
+    ip = Column('ip', String(1000), nullable=False)
+    path = Column('token', String(1000), nullable=False)
     counter = Column('counter', Integer, default=0, nullable=False)
     time_stamp = Column('time_stamp', Integer, nullable=False, default=time.time())
 

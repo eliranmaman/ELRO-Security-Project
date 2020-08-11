@@ -215,7 +215,7 @@ class AdminUpdateServiceStatusHandler(Resource):
 
         sess.commit()
         sess.close()
-        return {'bye': 'world'}
+        return 1
 
 
 class AddNewWebsiteHandler(Resource):
