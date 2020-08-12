@@ -10,8 +10,10 @@ from Data.enums.controller_enums import ControllerResponseCode, RedirectAnswerTo
 from Detectors.user_protection import UserProtectionDetector
 from config import db, blocked_path, blocked_url
 
+
 # TODO: 1) If we blocked we get "Secure Page" from the response detector (need to avoid check block page)
 #       2) Its making a circle click "approve" => blocked from brute force => show user protection => click "approve" => ... => ...
+
 
 def handle_block(func):
     @wraps(func)
