@@ -1,7 +1,0 @@
-payload,attack_type
-or,norm
-and,norm
-select my shirt,norm
-union,norm
-or 1=1,sqli
-"union all 1,2",sqli
