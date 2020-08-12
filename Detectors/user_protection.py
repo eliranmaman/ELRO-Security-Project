@@ -16,7 +16,6 @@ def invoke_detector(func):
     def wrapper(self, *args, **kwargs):
         if is_on(map_bit[func.__name__], self.bit_indicator):
             is_detected = func(self, *args, **kwargs)
-            print(func.__name__, "Is detected:", is_detected)
             if is_detected:
                 self._UserProtectionResults.bit_map |= map_bit[func.__name__]
                 self._UserProtectionResults.detected_alerts.append(bit_map_errors[map_bit[func.__name__]])
