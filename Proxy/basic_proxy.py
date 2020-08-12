@@ -16,7 +16,7 @@ from config import server
 from config import log_dict
 from Detectors import SQLDetector, BruteForce, BotsDetector, ProxyDetector, XSSDetector, XMLDetector, CookiesPoisoning
 
-hostname2 = "www.google.com"
+hostname2 = "eliranm.co"
 
 sys.stderr = open(log_dict + "/basic_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
@@ -64,7 +64,6 @@ class BasicProxy(Proxy):
                     "xss_detector": XSSDetector,
                     "xml_detector": XMLDetector,
                     "csrf_detector": CSRF,
-                    "cookie_poisoning_detector": CookiesPoisoning,
                     "bruteforce_detector": BruteForce,
                     "bots_detector": BotsDetector,
                 }
@@ -85,7 +84,7 @@ class BasicProxy(Proxy):
                 # print("Finish .....")
                 # else:
                 #     print("verify completed, Welcome back {}".format(self.client_address))
-                url = 'https://{}{}'.format("google.com", parsed_request.path)
+                url = 'https://{}{}'.format("eliranm.co", parsed_request.path)
                 if response_code == ControllerResponseCode.NotValid:
                     self.send_response(302)
                     self.send_header('Location', url)

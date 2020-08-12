@@ -16,11 +16,10 @@ def invoke_detector(func):
     def wrapper(self, *args, **kwargs):
         if is_on(map_bit[func.__name__], self.bit_indicator):
             is_detected = func(self, *args, **kwargs)
+            print(func.__name__, "Is detected:", is_detected)
             if is_detected:
                 self._UserProtectionResults.bit_map |= map_bit[func.__name__]
-                print(self._UserProtectionResults.bit_map)
                 self._UserProtectionResults.detected_alerts.append(bit_map_errors[map_bit[func.__name__]])
-                print("Done")
     return wrapper
 
 
@@ -35,7 +34,6 @@ class UserProtectionResults(object):
 
 
 def is_on(index, bit):
-    print("Index: ", index, "Res: ", (bit >> int(math.log(index) / math.log(2))))
     if index == 0:
         return 0
     if index == 1:
@@ -60,15 +58,11 @@ class UserProtectionDetector(object):
         :return: UserProtectionResults Object.
         """
         self.bit_indicator = bit_indicator
-        print("__detect_script_files")
-        self.__detect_script_files()
-        print("__access_cookies")
-        self.__access_cookies()
-        print("__iframe")
-        self.__iframe()
-        print("__detect_csrf_requests")
+        print("{0:b}".format(bit_indicator))
         self.__detect_csrf_requests()
-        print("__detect_inline_scripts")
+        self.__detect_script_files()
+        self.__access_cookies()
+        self.__iframe()
         self.__detect_inline_scripts()
         return self._UserProtectionResults
 
@@ -78,7 +72,7 @@ class UserProtectionDetector(object):
         Will looking for inline scripts in the page.
         :return: Boolean
         """
-        return self._response.text.find("script") > 0
+        return self._response.text.find("<script") > 0
 
     @invoke_detector
     def __detect_script_files(self):
@@ -89,7 +83,8 @@ class UserProtectionDetector(object):
         :return: Boolean
         """
         return self._response.headers.get('Content-Type', "").find(
-            "javascript") > 0 or self._UserProtectionResults.csrf_js_files
+            "javascript") > 0 or self._UserProtectionResults.csrf_js_files or self._response.text.find(".js\"") > 0 \
+            or self._response.text.find("<script src=\"") > 0 or self._response.text.find("\"></script>") > 0
 
     @invoke_detector
     def __access_cookies(self):

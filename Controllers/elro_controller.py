@@ -32,6 +32,11 @@ def modify_response(func):
         with open("C:/Users/elira/Desktop/לימודים/פרויקט גמר/elro-sec/Controllers/safe_place.html", "r") as file:
             new_content = file.read()
         to_add = "".join(["<li>{}</li>".format(i) for i in detector_result.detected_alerts])
+        if detector_result.csrf_js_files:
+            csrf_js_files = "Files that loaded from other urls:<ul style='font-size: small;s'>{}</ul>".format("".join(["<li>{}</li>".format(i) for i in detector_result.csrf_urls]))
+        else:
+            csrf_js_files = ""
+        new_content = new_content.replace("#CsrfJsFIles#", csrf_js_files)
         new_content = new_content.replace("#Activites#", to_add, 1)
         new_content = new_content.replace("#OriginalLocation#", str(self._request.path), 1)
         new_cookie_value = cookies.SimpleCookie()
@@ -86,7 +91,6 @@ class ElroController(Controller):
             validate = detector.detect(parsed_request)
             if detector.name == "cookie_poisoning_detector" and validate:
                 # Detected => Removing cookies.
-                print("Removing?")
                 original_request.headers.replace_header("Cookie", "")
             elif detector.name == "cookie_poisoning_detector" :
                 # Creating new token
@@ -108,43 +112,20 @@ class ElroController(Controller):
         self._response = parsed_response
         parsed_response.from_server_id = self._server.item_id
         res_cookies = self._request.headers.get("Cookie", "")
-        # print(res_cookies)
         m = re.match(".*?Elro-Sec-Bit=.*\"(\d*)@Elro-Sec-End", res_cookies)
         self._bit_indicator = 255 if m is None else int(m.group(1))
-        print("Bitttt", self._bit_indicator)
         user_protection = UserProtectionDetector(parsed_response)
         results = user_protection.detect(self._bit_indicator)
         detector_data = DetectorDataResponse(request_id=self._request_data.item_id,
                                              from_server_id=parsed_response.from_server_id,
                                              to_ip=parsed_response.to_ip)
         db.insert(detector_data)
-        cookies_to_add = str()
-        if type(self.response_cookie) is CookiesToken:
-            # Find the old token
-            session = db.get_session()
-            old_cookie = session.query(CookiesToken). \
-                filter_by(active=True, ip=self._request.from_ip,
-                          dns_name=self._request.host_name).first()
-            if old_cookie is not None:
-                old_cookie.active = False
-                session.commit()
-            # Insert the new token
-            db.insert(self.response_cookie)
-            # Update the response with the new token.
-            token_cookie = cookies.SimpleCookie()
-            token_cookie['Elro-Sec-Token'] = "{}@Elro-Sec-End".format(self.response_cookie.token)
-            token_cookie['Elro-Sec-Token']['max-age'] = 2592000  # 30 days
-            cookies_to_add += str(token_cookie).replace("Set-Cookie:", "", 1)
-            cookies_to_add += "\n"
         # User Protection Bit
         if m is None and "text/html" in self._request.headers.get("Content-Type", ""):
             bit_cookie = cookies.SimpleCookie()
             bit_cookie['Elro-Sec-Bit'] = "{}@Elro-Sec-End".format(self._bit_indicator)
             bit_cookie['Elro-Sec-Bit']['max-age'] = 2592000  # 30 days
-            bit_cookie = str(bit_cookie)
-            cookies_to_add += bit_cookie if len(cookies_to_add) > 0 else bit_cookie.replace("Set-Cookie:", "", 1)
-        original_response.headers["Set-Cookie"] = cookies_to_add
-        #TODO: Remove old cookies of bit map && token.
+            original_response.headers["Set-Cookie"] = bit_cookie
         return results, RedirectAnswerTo.Client, original_response
 
     def _is_authorized(self, requester_ip):
@@ -171,7 +152,7 @@ class ElroController(Controller):
         session = db.get_session()
         services = session.query(Services).filter_by(server_id=server_id).first()
         services = to_json(services, ignore_list=["item_id", "created_on", "user_id", "server_id"])
-        return [self._detectors[key] for key in services]
+        return [self._detectors[key] for key in services if key in self._detectors]
 
     def _extra_data(self, server_ip):
         pass
