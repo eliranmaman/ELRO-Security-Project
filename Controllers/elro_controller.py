@@ -88,7 +88,7 @@ class ElroController(Controller):
                 # Detected => Removing cookies.
                 print("Removing?")
                 original_request.headers.replace_header("Cookie", "")
-            elif detector.name == "cookie_poisoning_detector":
+            elif detector.name == "cookie_poisoning_detector" :
                 # Creating new token
                 self.response_cookie = CookiesToken(dns_name=parsed_request.host_name, ip=parsed_request.from_ip,
                                                     active=True, token=secrets.token_hex(256))
@@ -111,6 +111,7 @@ class ElroController(Controller):
         # print(res_cookies)
         m = re.match(".*?Elro-Sec-Bit=.*\"(\d*)@Elro-Sec-End", res_cookies)
         self._bit_indicator = 255 if m is None else int(m.group(1))
+        print("Bitttt", self._bit_indicator)
         user_protection = UserProtectionDetector(parsed_response)
         results = user_protection.detect(self._bit_indicator)
         detector_data = DetectorDataResponse(request_id=self._request_data.item_id,
@@ -136,7 +137,7 @@ class ElroController(Controller):
             cookies_to_add += str(token_cookie).replace("Set-Cookie:", "", 1)
             cookies_to_add += "\n"
         # User Protection Bit
-        if m is None:
+        if m is None and "text/html" in self._request.headers.get("Content-Type", ""):
             bit_cookie = cookies.SimpleCookie()
             bit_cookie['Elro-Sec-Bit'] = "{}@Elro-Sec-End".format(self._bit_indicator)
             bit_cookie['Elro-Sec-Bit']['max-age'] = 2592000  # 30 days
