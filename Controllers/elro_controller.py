@@ -171,7 +171,7 @@ class ElroController(Controller):
         session = db.get_session()
         services = session.query(Services).filter_by(server_id=server_id).first()
         services = to_json(services, ignore_list=["item_id", "created_on", "user_id", "server_id"])
-        return [self._detectors[key] for key in services]
+        return [self._detectors[key] for key in services if key in self._detectors]
 
     def _extra_data(self, server_ip):
         pass

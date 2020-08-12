@@ -64,7 +64,7 @@ class BasicProxy(Proxy):
                     "xss_detector": XSSDetector,
                     "xml_detector": XMLDetector,
                     "csrf_detector": CSRF,
-                    "cookie_poisoning_detector": CookiesPoisoning,
+                    # "cookie_poisoning_detector": CookiesPoisoning,
                     "bruteforce_detector": BruteForce,
                     "bots_detector": BotsDetector,
                 }
