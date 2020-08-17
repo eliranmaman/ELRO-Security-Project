@@ -76,7 +76,7 @@ class BasicProxy2(Proxy):
                     self.send_response(302)
                     self.send_header('Location', url)
                     self.end_headers()
-                else:
+                elif response_code == ControllerResponseCode.Valid:
                     print("4) Valid, Asking for {}".format(url))
                     resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header(parsed_request.host_name)), verify=False)
                     print("4.1) Request Arrived")
@@ -99,6 +99,10 @@ class BasicProxy2(Proxy):
                         print("9) Send Body")
                         self.wfile.write(send_content)
                     return
+                else:
+                    # The response is failed. (e.g server is not exist in the DB).
+                    print("4) Send 404")
+                    self.send_error(404, 'error trying to proxy')
             except Exception as e:
                 print(e)
             finally:
