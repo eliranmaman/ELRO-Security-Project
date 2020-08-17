@@ -43,7 +43,7 @@ class BruteForce(Detector):
         elif sensitivity == Sensitivity.Sensitive:
             max_counter = 15
         elif sensitivity == Sensitivity.VerySensitive:
-            max_counter = 10
+            max_counter = 1000
         else:
             max_counter = 3
         # Check if the last request was more that 1min ago

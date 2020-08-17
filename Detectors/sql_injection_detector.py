@@ -6,6 +6,13 @@ from config import data_path
 import re
 
 
+def create_content_as_str(content):
+    my_str = ""
+    for item, val in content.__dict__.items():
+        my_str += "{}:{} ".format(item, val)
+    return my_str.upper()
+
+
 class SqlInjection(Detector):
     """this class will detect SQL injections attempts in a given parsed request/response"""
     __Forbidden_FILE = data_path+"/Detectors/SQLInjection/forbidden.json"
@@ -28,9 +35,8 @@ class SqlInjection(Detector):
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data_copy = parsed_data  # Copy the parsed data to avoid change the origin
-        parsed_data_copy.headers = to_json(parsed_data_copy.headers)
-        parsed_data_copy = str(to_json(parsed_data_copy)).upper()
+        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
+        parsed_data_as_str += create_content_as_str(parsed_data)
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
@@ -40,14 +46,14 @@ class SqlInjection(Detector):
         forbidden_word_list = []
         # check for context break intentions
         for break_char in self.__break_characters:
-            context_breaks = re.findall(break_char, parsed_data_copy)
+            context_breaks = re.findall(break_char, parsed_data_as_str)
             if len(context_breaks) > 0:
                 context_break_list.append(context_breaks)
                 if sensitivity == Sensitivity.Sensitive:
                     return True
         # check for forbidden words
         for forbidden_word in self.__forbidden:
-            forbidden_words = re.findall(forbidden_word, parsed_data_copy)
+            forbidden_words = re.findall(forbidden_word, parsed_data_as_str)
             if len(forbidden_words) > 0:
                 forbidden_word_list.append(forbidden_words)
         # if tries to break context with forbidden words it is probably an attack

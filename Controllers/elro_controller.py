@@ -21,6 +21,7 @@ def handle_block(func):
         if response_code == ControllerResponseCode.NotValid:
             parsed_request.host_name = blocked_url
             parsed_request.path = blocked_path
+            parsed_request.query = ""
         return response_code, redirect_to, the_request, parsed_request
 
     return wrapper

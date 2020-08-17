@@ -70,7 +70,8 @@ class BasicProxy2(Proxy):
                 response_code, send_to, new_request, parsed_request = controller.request_handler(parsed_request, self)
                 print("3) Parse headers")
                 req_header = new_request.parse_headers()
-                url = 'http://{}{}'.format(parsed_request.host_name, parsed_request.path)
+                url = 'http://{}{}?{}'.format(parsed_request.host_name, parsed_request.path, parsed_request.query)
+                print(url)
                 if response_code == ControllerResponseCode.NotValid:
                     print("4) Not Valid")
                     self.send_response(302)

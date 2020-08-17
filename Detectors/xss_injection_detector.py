@@ -2,6 +2,7 @@ import json
 
 from DBAgent.orm import to_json
 from Detectors import Detector, Sensitivity
+from Detectors.sql_injection_detector import create_content_as_str
 from config import data_path
 import re
 
@@ -27,9 +28,8 @@ class XSSDetector(Detector):
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data_copy = parsed_data  # Copy the parsed data to avoid change the origin
-        parsed_data_copy.headers = to_json(parsed_data_copy.headers)
-        parsed_data_copy = str(to_json(parsed_data_copy)).upper()
+        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
+        parsed_data_as_str += create_content_as_str(parsed_data)
         forbidden_word_list = []
         if forbidden is not None:
             self.__forbidden += forbidden
@@ -38,7 +38,7 @@ class XSSDetector(Detector):
         # check for xss injection attempts
         for forbidden_word in self.__forbidden:
             try:
-                forbidden_words = re.findall(forbidden_word, parsed_data_copy)
+                forbidden_words = re.findall(forbidden_word, parsed_data_as_str)
                 if len(forbidden_words) > 0:
                     forbidden_word_list.append(forbidden_words)
             except Exception as e:
