@@ -12,6 +12,9 @@ from config import db, blocked_path, blocked_url
 
 
 # TODO: 1) Its making a circle click "approve" => blocked from brute force => show user protection => click "approve" => ... => ... (I think it's done.)
+#       2) SQL Detector (validator) how to put it in ?
+#       3) deploy on the server (doron need to open the 80, 443, 22 port for network out)
+#       4)
 
 
 def handle_block(func):
