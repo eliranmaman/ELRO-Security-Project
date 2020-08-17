@@ -7,7 +7,7 @@ from Controllers import Controller
 from DBAgent import Server
 from DBAgent.orm import Services, WhiteList, BlackList, DetectorRequestData, DetectorDataResponse, to_json, CookiesToken
 from Data.enums.controller_enums import ControllerResponseCode, RedirectAnswerTo, IsAuthorized
-from Detectors.user_protection import UserProtectionDetector
+from Detectors.user_protection import UserProtectionDetector, UserProtectionResults
 from config import db, blocked_path, blocked_url
 
 
@@ -37,7 +37,8 @@ def modify_response(func):
             new_content = file.read()
         to_add = "".join(["<li>{}</li>".format(i) for i in detector_result.detected_alerts])
         if detector_result.csrf_js_files:
-            csrf_js_files = "Files that loaded from other urls:<ul style='font-size: small;s'>{}</ul>".format("".join(["<li>{}</li>".format(i) for i in detector_result.csrf_urls]))
+            csrf_js_files = "Files that loaded from other urls:<ul style='font-size: small;s'>{}</ul>".format(
+                "".join(["<li>{}</li>".format(i) for i in detector_result.csrf_urls]))
         else:
             csrf_js_files = ""
         new_content = new_content.replace("#CsrfJsFIles#", csrf_js_files)
@@ -89,14 +90,13 @@ class ElroController(Controller):
         # Get list of detectors for the server
         parsed_request.to_server_id = self._server.item_id
         detectors = self._list_of_detectors(self._server.item_id)
-        validate = False
         for detector_constructor in detectors:
             detector = detector_constructor()
             validate = detector.detect(parsed_request)
             if detector.name == "cookie_poisoning_detector" and validate:
                 # Detected => Removing cookies.
                 original_request.headers.replace_header("Cookie", "")
-            elif detector.name == "cookie_poisoning_detector" :
+            elif detector.name == "cookie_poisoning_detector":
                 # Creating new token
                 self.response_cookie = CookiesToken(dns_name=parsed_request.host_name, ip=parsed_request.from_ip,
                                                     active=True, token=secrets.token_hex(256))
@@ -113,6 +113,9 @@ class ElroController(Controller):
 
     @modify_response
     def response_handler(self, parsed_response, original_response):
+        # If the response is the block page => don't activate the response detector.
+        if blocked_url in self._request.host_name and self._request.path == blocked_path:
+            return UserProtectionResults(), RedirectAnswerTo.Client, original_response
         self._response = parsed_response
         parsed_response.from_server_id = self._server.item_id
         res_cookies = self._request.headers.get("Cookie", "")
@@ -156,7 +159,7 @@ class ElroController(Controller):
         session = db.get_session()
         services = session.query(Services).filter_by(server_id=server_id).first()
         services = to_json(services, ignore_list=["item_id", "created_on", "user_id", "server_id"])
-        return [self._detectors[key] for key in services if key in self._detectors]
+        return [self._detectors[key] for key in services if key in self._detectors and services[key]]
 
     def _extra_data(self, server_ip):
         pass

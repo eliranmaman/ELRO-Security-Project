@@ -26,6 +26,7 @@ class BruteForce(Detector):
         :return: boolean
         """
         # Pre Processing
+        legitimate = ["*<=>blocked.html"] if type(legitimate) is not list else legitimate+["*<=>blocked.html"]
         check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
             return False
@@ -89,7 +90,12 @@ class BruteForce(Detector):
         if request_data in legitimate:
             return Classification.Clean
         # For case that the ip has access for all the server path its will be ip only.
-        if parsed_data.from_ip in legitimate:
+        request_data = "{}<=>{}".format(parsed_data.from_ip, "*")
+        if request_data in legitimate:
+            return Classification.Clean
+        # For case that the path has access for all clients ips its will be path only.
+        request_data = "{}<=>{}".format("*", req_path)
+        if request_data in legitimate:
             return Classification.Clean
         return Classification.NoConclusion
 
