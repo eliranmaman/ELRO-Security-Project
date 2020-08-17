@@ -39,11 +39,11 @@ class BruteForce(Detector):
         last_request, counter = bf_item.time_stamp, bf_item.counter
         # Sensitivity will determinate the max_counter.
         if sensitivity == Sensitivity.Regular:
-            max_counter = 10  # TODO: discuss about the const numbers.
+            max_counter = 20  # TODO: discuss about the const numbers.
         elif sensitivity == Sensitivity.Sensitive:
-            max_counter = 5
+            max_counter = 15
         elif sensitivity == Sensitivity.VerySensitive:
-            max_counter = 1
+            max_counter = 10
         else:
             max_counter = 3
         # Check if the last request was more that 1min ago

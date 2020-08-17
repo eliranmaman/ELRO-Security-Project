@@ -1,4 +1,6 @@
 import json
+
+from DBAgent.orm import to_json
 from Detectors import Detector, Sensitivity
 from config import data_path
 import re
@@ -26,7 +28,9 @@ class SqlInjection(Detector):
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data = str(parsed_data).upper()
+        parsed_data_copy = parsed_data  # Copy the parsed data to avoid change the origin
+        parsed_data_copy.headers = to_json(parsed_data_copy.headers)
+        parsed_data_copy = str(to_json(parsed_data_copy)).upper()
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
@@ -36,14 +40,14 @@ class SqlInjection(Detector):
         forbidden_word_list = []
         # check for context break intentions
         for break_char in self.__break_characters:
-            context_breaks = re.findall(break_char, parsed_data)
+            context_breaks = re.findall(break_char, parsed_data_copy)
             if len(context_breaks) > 0:
                 context_break_list.append(context_breaks)
                 if sensitivity == Sensitivity.Sensitive:
                     return True
         # check for forbidden words
         for forbidden_word in self.__forbidden:
-            forbidden_words = re.findall(forbidden_word, parsed_data)
+            forbidden_words = re.findall(forbidden_word, parsed_data_copy)
             if len(forbidden_words) > 0:
                 forbidden_word_list.append(forbidden_words)
         # if tries to break context with forbidden words it is probably an attack
