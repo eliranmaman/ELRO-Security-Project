@@ -11,8 +11,7 @@ from Detectors.user_protection import UserProtectionDetector, UserProtectionResu
 from config import db, blocked_path, blocked_url
 
 
-# TODO: 1) If we blocked we get "Secure Page" from the response detector (need to avoid check block page)
-#       2) Its making a circle click "approve" => blocked from brute force => show user protection => click "approve" => ... => ...
+# TODO: 1) Its making a circle click "approve" => blocked from brute force => show user protection => click "approve" => ... => ... (I think it's done.)
 
 
 def handle_block(func):
