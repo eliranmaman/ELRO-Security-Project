@@ -37,6 +37,7 @@ class SqlInjection(Detector):
         """
         parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
         parsed_data_as_str += create_content_as_str(parsed_data)
+        print(parsed_data_as_str)
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:

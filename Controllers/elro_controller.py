@@ -36,7 +36,7 @@ def modify_response(func):
         detector_result, redirect_to, the_response = func(self, *args, **kwargs)
         if detector_result.bit_map == 0 or "text/html" not in the_response.headers.get('Content-Type', ""):
             return ControllerResponseCode.Valid, redirect_to, the_response.content
-        with open("C:/Users/elira/Desktop/לימודים/פרויקט גמר/elro-sec/Controllers/safe_place.html", "r") as file:
+        with open("Controllers/safe_place.html", "r") as file:
             new_content = file.read()
         to_add = "".join(["<li>{}</li>".format(i) for i in detector_result.detected_alerts])
         if detector_result.csrf_js_files:

@@ -34,6 +34,8 @@ class HttpRequest(object):
         self.decision = decision
         self.time_stamp = time_stamp
         self.text = None
+        self.form = None
+        self.args = None
 
 
 class Parser(object):
@@ -59,7 +61,8 @@ class BaseHTTPRequestParser(Parser):
         parsed_data.headers = data_to_parse.headers
         parsed_data.query = '{uri.query}'.format(uri=urlparse(data_to_parse.path))
         parsed_data.path = '{uri.path}'.format(uri=urlparse(data_to_parse.path))
-        parsed_data.host_name = '{uri.netloc}'.format(uri=urlparse("https://{}".format(data_to_parse.headers.get('HOST').replace("http://", "").replace("https://", ""))))
+        parsed_data.host_name = '{uri.netloc}'.format(uri=urlparse(
+            "https://{}".format(data_to_parse.headers.get('HOST').replace("http://", "").replace("https://", ""))))
         parsed_data.from_ip = data_to_parse.client_address[0]
         parsed_data.time_stamp = data_to_parse.log_date_time_string()
         return parsed_data
@@ -87,4 +90,22 @@ class HTTPResponseParser(Parser):
         parsed_data.to_ip = self.__request.from_ip
         parsed_data.time_stamp = datetime.now()
         parsed_data.from_dns_name = self.__request.host_name
+        return parsed_data
+
+
+class FlaskHTTPRequestParser(Parser):
+
+    def parse(self, data_to_parse):
+        parsed_data = HttpRequest()
+        url = urlparse(data_to_parse.url)
+        parsed_data.method = "{}".format(data_to_parse.method).upper()
+        parsed_data.content = data_to_parse.get_data()
+        parsed_data.headers = data_to_parse.headers
+        parsed_data.query = '{uri.query}'.format(uri=url)
+        parsed_data.path = '{uri.path}'.format(uri=url)
+        parsed_data.host_name = '{uri.netloc}'.format(uri=url)
+        parsed_data.from_ip = data_to_parse.remote_addr
+        parsed_data.time_stamp = datetime.now()
+        parsed_data.args = data_to_parse.args
+        parsed_data.form = data_to_parse.form
         return parsed_data
