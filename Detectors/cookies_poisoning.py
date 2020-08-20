@@ -15,7 +15,7 @@ class CookiesPoisoning(Detector):
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: The path's that forbidden in any case for cross-site (list)
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean

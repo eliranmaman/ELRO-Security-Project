@@ -17,10 +17,10 @@ class ProxyDetector(Detector):
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
-        This method will try to detect parsed_data that arrive from proxies, with pre define list & updated API that
+        This method will try to detect parsed_data that arrive from proxies, with pre defined list & updated API that
         contains list of proxies.
         :param parsed_data: send the full HttpRequest object.
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
@@ -40,7 +40,7 @@ class ProxyDetector(Detector):
 
     def __parse_ip_data(self, ip):
         """
-        This method will send request true API to get more information about the specific User-Agent
+        This method will send request through API to get more information about the specific User-Agent
         than parse the information and return it.
         :return: dict
         """

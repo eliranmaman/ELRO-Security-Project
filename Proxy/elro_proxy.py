@@ -15,11 +15,20 @@ from config import log_dict
 from Detectors import SQLDetector, BruteForce, BotsDetector, XSSDetector, XMLDetector
 
 
-sys.stderr = open(log_dict + "/basic_proxy.log", 'a+')
+sys.stderr = open(log_dict + "/elro_proxy.log", 'a+')
 handler = logging.StreamHandler(sys.stderr)
-handler.setLevel(logging.ERROR)
+handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
+logger = logging.getLogger(__name__)
+logger.addHandler(handler)
+
+
+"""This class is responsible to be the main proxy of the waf 
+and will control all the traffic of the requests and responses,
+will contain all the flow logic of how and when the detectors will be applied
+and will decide what to do with the given request/response.
+"""
 
 
 class BasicProxy2(Proxy):
@@ -32,17 +41,18 @@ class BasicProxy2(Proxy):
             self._running = True
             server_address = (server["address"], self._port)
             self._httpd = HTTPServer(server_address, BasicProxy2.RequestHandler2)
-            print('Proxy is alive: \n\tPort: {}\n\tAddress: {}'.format(self._port, server["address"]))
+            logger.info('Proxy is alive: \n\tPort: {}\n\tAddress: {}'.format(self._port, server["address"]))
+
             self._httpd.serve_forever()  # should be in another Thread.
         else:
-            print("Proxy is already alive at: \n\tAddress: {}\n\tPort: {}".format(server["address"], self._port))
+            logger.info("Proxy is already alive at: \n\tAddress: {}\n\tPort: {}".format(server["address"], self._port))
 
     def stop(self):
         if self._running:
             self._running = False
             self._httpd.server_close()
         else:
-            print("Proxy is not running")
+            logger.info("Proxy is not running")
 
     class RequestHandler2(BaseHTTPRequestHandler):
         Controller = Proxy._controller
@@ -51,7 +61,7 @@ class BasicProxy2(Proxy):
             self.do_GET(body=False)
 
         def do_GET(self, body=True):
-            print("0) Request Arrived")
+            logger.info("0) Request Arrived")
             sent = False
             try:
                 detectors = {
@@ -62,50 +72,51 @@ class BasicProxy2(Proxy):
                     "bruteforce_detector": BruteForce,
                     "bots_detector": BotsDetector,
                 }
-                print("1) Parse Request")
+                logger.info("1) Parse Request")
                 parser = BaseHTTPRequestParser()
                 parsed_request = parser.parse(self)
-                print("2) Controller")
+                logger.info("2) Controller")
                 controller = ElroController(detectors=detectors)
                 response_code, send_to, new_request, parsed_request = controller.request_handler(parsed_request, self)
-                print("3) Parse headers")
+                logger.info("3) Parse headers")
                 req_header = new_request.parse_headers()
-                url = 'http://{}{}?{}'.format(parsed_request.host_name, parsed_request.path, parsed_request.query)
-                print(url)
+                url = 'http://{}{}'.format(parsed_request.host_name, parsed_request.path)
                 if response_code == ControllerResponseCode.NotValid:
-                    print("4) Not Valid")
+                    logger.info("4) Not Valid")
                     self.send_response(302)
                     self.send_header('Location', url)
                     self.end_headers()
-                elif response_code == ControllerResponseCode.Valid:
-                    print("4) Valid, Asking for {}".format(url))
+                elif response_code == ControllerResponseCode.Failed:
+                    logger.info("4) Failed")
+                    self.send_response(404)
+                    self.send_header('Location', url)
+                    self.end_headers()
+                else:
+                    logger.info("4) Valid, Asking for {}".format(url))
                     resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header(parsed_request.host_name)), verify=False)
-                    print("4.1) Request Arrived")
+                    logger.info("4.1) Request Arrived")
                     parser = HTTPResponseParser(parsed_request)
-                    print("5) Parse Response")
+                    logger.info("5) Parse Response")
                     parsed_response = parser.parse(resp)
-                    print("6) Controller")
+                    logger.info("6) Controller")
                     response_code, send_to, new_content = controller.response_handler(parsed_response, resp)
+                    logger.info("7) after controller handling response ")
                     if response_code == ControllerResponseCode.NotValid:
                         send_content = new_content
                     else:
                         send_content = resp.content
                     sent = True
                     resp.headers['Content-Length'] = "{}".format(len(send_content))
-                    print("7) Send Response")
+                    logger.info("7) Send Response")
                     self.send_response(resp.status_code)
-                    print("8) Send Header")
+                    logger.info("8) Send Header")
                     self.send_resp_headers(resp)
                     if body:
-                        print("9) Send Body")
+                        logger.info("9) Send Body")
                         self.wfile.write(send_content)
                     return
-                else:
-                    # The response is failed. (e.g server is not exist in the DB).
-                    print("4) Send 404")
-                    self.send_error(404, 'error trying to proxy')
             except Exception as e:
-                print(e)
+                logger.exception(e)
             finally:
                 self.finish()
                 if not sent:
@@ -151,7 +162,7 @@ class BasicProxy2(Proxy):
                         self.wfile.write(send_content)
                     return
             except Exception as e:
-                print(e)
+                logger.exception(e)
             finally:
                 self.finish()
                 if not sent:

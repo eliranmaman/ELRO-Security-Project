@@ -20,13 +20,12 @@ class BruteForce(Detector):
         The method will check path that are in the forbidden list, for every path in this list
         the method will perform brute force check by number of request in the last 1min.
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
         """
         # Pre Processing
-        legitimate = ["*<=>blocked.html"] if type(legitimate) is not list else legitimate+["*<=>blocked.html"]
         check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
             return False
@@ -39,11 +38,11 @@ class BruteForce(Detector):
         last_request, counter = bf_item.time_stamp, bf_item.counter
         # Sensitivity will determinate the max_counter.
         if sensitivity == Sensitivity.Regular:
-            max_counter = 20  # TODO: discuss about the const numbers.
+            max_counter = 10  # TODO: discuss about the const numbers.
         elif sensitivity == Sensitivity.Sensitive:
-            max_counter = 15
+            max_counter = 5
         elif sensitivity == Sensitivity.VerySensitive:
-            max_counter = 1000
+            max_counter = 1
         else:
             max_counter = 3
         # Check if the last request was more that 1min ago
@@ -90,12 +89,7 @@ class BruteForce(Detector):
         if request_data in legitimate:
             return Classification.Clean
         # For case that the ip has access for all the server path its will be ip only.
-        request_data = "{}<=>{}".format(parsed_data.from_ip, "*")
-        if request_data in legitimate:
-            return Classification.Clean
-        # For case that the path has access for all clients ips its will be path only.
-        request_data = "{}<=>{}".format("*", req_path)
-        if request_data in legitimate:
+        if parsed_data.from_ip in legitimate:
             return Classification.Clean
         return Classification.NoConclusion
 

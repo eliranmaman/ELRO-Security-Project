@@ -1,10 +1,19 @@
 import json
+import sys
 
-from DBAgent.orm import to_json
 from Detectors import Detector, Sensitivity
-from Detectors.sql_injection_detector import create_content_as_str
-from config import data_path
+from config import data_path, log_dict
 import re
+import logging
+
+sys.stderr = open(log_dict + "/xss_injection.log", 'a+')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+handler = logging.StreamHandler(sys.stderr)
+handler.setLevel(logging.INFO)
+handler.setFormatter(formatter)
+logger = logging.getLogger(__name__)
+logger.addHandler(handler)
 
 
 class XSSDetector(Detector):
@@ -19,17 +28,16 @@ class XSSDetector(Detector):
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
-        Just to be clear: there is not absolute way to determine if request arrive from legit user or not.
-        We can just look for the "sloppy" guys, by checking the User-Agent.
-        This method will determine if the request arrive from bot or not.
+        This method will detect an XML attack attempt by the regex and data given in the 'XSSInjection' folder
+        under 'Data' folder..
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of additional malicious words/regex that we wish to add to the forbidden list on runtime
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
-        parsed_data_as_str += create_content_as_str(parsed_data)
+        parsed_data = str(parsed_data).upper()
+        logger.info("xss_injection got parsed_data ::--> " + parsed_data)
         forbidden_word_list = []
         if forbidden is not None:
             self.__forbidden += forbidden
@@ -38,11 +46,12 @@ class XSSDetector(Detector):
         # check for xss injection attempts
         for forbidden_word in self.__forbidden:
             try:
-                forbidden_words = re.findall(forbidden_word, parsed_data_as_str)
-                if len(forbidden_words) > 0:
-                    forbidden_word_list.append(forbidden_words)
+                forbidden_words = re.findall(forbidden_word, parsed_data)
             except Exception as e:
-                print("Exception with " + forbidden_word)
+                logger.exception("Exception with " + forbidden_word)
+            if len(forbidden_words) > 0:
+                forbidden_word_list.append(forbidden_words)
+
         # if detected a forbidden word it is probably an attack
         if len(forbidden_word_list) > 0:
             return True
@@ -61,5 +70,5 @@ class XSSDetector(Detector):
                     self.__forbidden.append(i)
             data_file.close()
         except Exception as e:
-            print(e)
+            logger.exception(e)
 

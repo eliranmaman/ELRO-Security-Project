@@ -1,17 +1,10 @@
 import json
-import parser
 
 import requests
 from flask import Flask, request
 from flask_restful import Resource, Api
-from json import dumps, loads, JSONEncoder, JSONDecoder
 
-import passlib
-from passlib.handlers.sha2_crypt import sha256_crypt
-from sqlalchemy.orm import load_only, Session
-from sqlalchemy import update
-
-from DBAgent.orm import Users, Services, Servers
+from DBAgent.orm import Users, Services, Server
 from Detectors.user_protection import UserProtectionDetector
 from config import db
 
@@ -82,7 +75,7 @@ class RegisterHandler(Resource):
         user = Users(email=incoming_json['users']['email'], password=incoming_json['users']['password'])
         db.insert(user)
         user_id = user.item_id
-        server = Servers(user_id=user_id,
+        server = Server(user_id=user_id,
                          server_ip=incoming_json['services']['ip'],
                          server_dns=incoming_json['services']['website'])
         db.insert(server)
@@ -134,17 +127,14 @@ class GetActiveServicesHandler(Resource):
             print("GetActiveServicesHandler")
             print("user: ==>", user_id)
             joined_statuses = []
-            joined_blocked = []
-            all_servers = db.get_session().query(Servers).filter(Servers.user_id == user_id).all()
+            all_servers = db.get_session().query(Server).filter(Server.user_id == user_id).all()
             for server in all_servers:
                 services = db.get_session().query(Services).filter(Services.server_id == server.item_id).one()
                 joined_object = {**to_json(services), **to_json(server)}
                 joined_object['website'] = joined_object['server_dns']
                 del joined_object['server_dns']
                 joined_statuses.append(joined_object)
-            # final_return_json = {"active_status": joined_statuses, "blocked_count": joined_blocked}
-            # print(final_return_json)
-            # return final_return_json
+
             return joined_statuses
 
         except Exception as e:
@@ -165,7 +155,7 @@ def to_json(item):
 class GetUsersDataHandler(Resource):
     def post(self):
         all_users = db.get_session().query(Users).all()
-        all_servers = db.get_session().query(Servers).all()
+        all_servers = db.get_session().query(Server).all()
         all_services = db.get_session().query(Services).all()
         joined_objects = []
         for user in all_users:
@@ -192,7 +182,7 @@ class UpdateServiceStatusHandler(Resource):
     def post(self):
         incoming_json = request.get_json()
         user_id = get_user_id_by_email(incoming_json['email'])
-        server = db.get_session().query(Servers).filter(Servers.server_dns == incoming_json['website']).one()
+        server = db.get_session().query(Server).filter(Server.server_dns == incoming_json['website']).one()
         services = db.get_session().query(Services).filter(Services.server_id == server.item_id).one()
         update_data = incoming_json['update_data']
         update_data_final = {k: 1 if v == 'True' else 0 for k, v in update_data.items()}
@@ -225,7 +215,7 @@ class AddNewWebsiteHandler(Resource):
         print("adding new website")
         print(incoming_json)
         user_id = get_user_id_by_email(email=incoming_json["email"])
-        server = Servers(user_id=user_id,
+        server = Server(user_id=user_id,
                         server_ip=incoming_json['services']['ip'],
                         server_dns=incoming_json['services']['website'])
         db.insert(server)

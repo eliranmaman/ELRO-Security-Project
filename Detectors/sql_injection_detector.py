@@ -1,16 +1,7 @@
 import json
-
-from DBAgent.orm import to_json
 from Detectors import Detector, Sensitivity
 from config import data_path
 import re
-
-
-def create_content_as_str(content):
-    my_str = ""
-    for item, val in content.__dict__.items():
-        my_str += "{}:{} ".format(item, val)
-    return my_str.upper()
 
 
 class SqlInjection(Detector):
@@ -26,17 +17,15 @@ class SqlInjection(Detector):
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
-        Just to be clear: there is not absolute way to determine if request arrive from legit user or not.
-        We can just look for the "sloppy" guys, by checking the User-Agent.
-        This method will determine if the request arrive from bot or not.
+         This method will detect an XML attack attempt by the regex and data given in the 'SQLInjection' folder under
+          'Data' folder.
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of additional malicious words/regex that we wish to add to the forbidden list on runtime
-        :param legitimate: The legitimate words/regex that we need automatically approve
+        :param legitimate: The legitimate words/regex that we need to automatically approve
         :return: boolean
         """
-        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
-        parsed_data_as_str += create_content_as_str(parsed_data)
+        parsed_data = str(parsed_data).upper()
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
@@ -46,14 +35,14 @@ class SqlInjection(Detector):
         forbidden_word_list = []
         # check for context break intentions
         for break_char in self.__break_characters:
-            context_breaks = re.findall(break_char, parsed_data_as_str)
+            context_breaks = re.findall(break_char, parsed_data)
             if len(context_breaks) > 0:
                 context_break_list.append(context_breaks)
                 if sensitivity == Sensitivity.Sensitive:
                     return True
         # check for forbidden words
         for forbidden_word in self.__forbidden:
-            forbidden_words = re.findall(forbidden_word, parsed_data_as_str)
+            forbidden_words = re.findall(forbidden_word, parsed_data)
             if len(forbidden_words) > 0:
                 forbidden_word_list.append(forbidden_words)
         # if tries to break context with forbidden words it is probably an attack

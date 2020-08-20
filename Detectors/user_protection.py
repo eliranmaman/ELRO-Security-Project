@@ -68,7 +68,7 @@ class UserProtectionDetector(object):
     @invoke_detector
     def __detect_inline_scripts(self):
         """
-        Will looking for inline scripts in the page.
+        This method is looking for inline scripts in the page.
         :return: Boolean
         """
         return self._response.text.find("<script") > 0
@@ -77,7 +77,7 @@ class UserProtectionDetector(object):
     def __detect_script_files(self):
         """
         This method will look for attempt to load js files from other origins, It is not give as
-        100% insurance but, it is better from nothing. It is important that this method will activate after
+        100% insurance but, it is better from nothing. It is important that this method will be activated after
         "__detect_csrf_requests"
         :return: Boolean
         """
@@ -96,7 +96,7 @@ class UserProtectionDetector(object):
     @invoke_detector
     def __iframe(self):
         """
-        This method will try to detect if the page is trying to load another page in iframe.
+        This method will try to detect if the page is trying to load another page in an iframe.
         This method has high value of False Positive.
         :return: Boolean
         """
@@ -106,7 +106,7 @@ class UserProtectionDetector(object):
     def __detect_csrf_requests(self):
         """
         This method will try to detect if the page is trying to invoke Cross Site
-        Requests (CSRF), images, scripts and other are include.
+        Requests (CSRF), images, scripts and other are included.
         This method has high value of False Positive.
         :return: Boolean
         """

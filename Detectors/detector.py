@@ -1,6 +1,6 @@
 import enum
 
-# TODO: check if the leggite or the forbidden need to run first in the _pre_processing method. (another reason is the
+# TODO: check if the legit or the forbidden need to run first in the _pre_processing method. (another reason is the
 #       is the fact that forbidden word can be legit.
 
 
@@ -49,8 +49,8 @@ class Detector(object):
 
     def _pre_processing(self, forbidden, legitimate, request):
         """
-        This method is to prevent duplicate code (each detector implement this code eventually)
-        The method perform check on the legitimate & forbidden lists.
+        This method is made in order to prevent duplicate code (each detector implement this code eventually)
+        The method performs check on the legitimate & forbidden lists.
         :param forbidden: the forbidden list
         :param legitimate: the legitimate list
         :param request: the request

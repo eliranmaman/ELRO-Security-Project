@@ -17,7 +17,7 @@ def to_json(item, ignore_list=None):
     for attr, value in item.__dict__.items():
         if "_sa_instance_state" in attr or attr in ignore_list:
             continue
-        json_data[attr] = value  # TODO: Why str(value)?
+        json_data[attr] = str(value)
 
     return json_data
 
@@ -28,6 +28,7 @@ def from_json(json_data, obj):
     return obj
 
 
+# This table will contain all the servers of the users
 class Server(SQLAlchemy.Item):
     __tablename__ = "servers"
     item_id = Column('id', Integer, primary_key=True, unique=True)
@@ -45,7 +46,7 @@ class Server(SQLAlchemy.Item):
         self.active = active
         self.time_stamp = time_stamp
 
-
+# This table will contain all the users
 class Users(SQLAlchemy.Item):
     __tablename__ = "users"
     item_id = Column('id', Integer, primary_key=True, unique=True)
@@ -67,17 +68,18 @@ class Users(SQLAlchemy.Item):
         self.closed_on = closed_on
 
 
+# This table will contain all the configurations of the detectors for each user
 class Services(SQLAlchemy.Item):
     __tablename__ = "services"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     user_id = Column('user_id', Integer, ForeignKey("users.id"), nullable=False)
-    sql_detector = Column('sql_detector', Boolean, nullable=False, default=True)
-    bots_detector = Column('bots_detector', Boolean, nullable=False, default=True)
-    xss_detector = Column('xss_detector', Boolean, nullable=False, default=True)
-    xml_detector = Column('xml_detector', Boolean, nullable=False, default=True)
-    csrf_detector = Column('csrf_detector', Boolean, nullable=False, default=True)
-    cookie_poisoning_detector = Column('cookie_poisoning_detector', Boolean, nullable=False, default=True)
-    bruteforce_detector = Column('bruteforce_detector', Boolean, nullable=False, default=True)
+    sql_detector = Column('sql_detector', Integer, nullable=False, default=True)
+    bots_detector = Column('bots_detector', Integer, nullable=False, default=True)
+    xss_detector = Column('xss_detector', Integer, nullable=False, default=True)
+    xml_detector = Column('xml_detector', Integer, nullable=False, default=True)
+    csrf_detector = Column('csrf_detector', Integer, nullable=False, default=True)
+    cookie_poisoning_detector = Column('cookie_poisoning_detector', Integer, nullable=False, default=True)
+    bruteforce_detector = Column('bruteforce_detector', Integer, nullable=False, default=True)
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), unique=True, nullable=False)
     created_on = Column('created_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -96,6 +98,7 @@ class Services(SQLAlchemy.Item):
         self.created_on = created_on
 
 
+# This table will contain the servers that we will automatically block requests to
 class BlackList(SQLAlchemy.Item):
     __tablename__ = "blacklist"
     item_id = Column('id', Integer, primary_key=True, unique=True)
@@ -110,6 +113,7 @@ class BlackList(SQLAlchemy.Item):
         self.time_stamp = time_stamp
 
 
+# This table will contain the servers that we will automatically not check requests to
 class WhiteList(SQLAlchemy.Item):
     __tablename__ = "whitelist"
     item_id = Column('id', Integer, primary_key=True, unique=True)
@@ -124,12 +128,13 @@ class WhiteList(SQLAlchemy.Item):
         self.time_stamp = time_stamp
 
 
+# This table will contain the history of all the requests that arrived to Elro
 class DetectorRequestData(SQLAlchemy.Item):
     __tablename__ = "detectors_requests_data"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    detected = Column('detected', String, nullable=False, default="none")
+    detected = Column('detected', String(1000), nullable=False, default="none")
     to_server_id = Column('to_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    from_ip = Column('from_ip', String, nullable=False)
+    from_ip = Column('from_ip', String(1000), nullable=False)
 
     def __init__(self, item_id=None, detected=None, to_server_id=None, from_ip=None):
         self.item_id = item_id
@@ -138,13 +143,14 @@ class DetectorRequestData(SQLAlchemy.Item):
         self.from_ip = from_ip
 
 
+# This table will contain the history of all the responses that arrived through Elro
 class DetectorDataResponse(SQLAlchemy.Item):
     __tablename__ = "detectors_data_responses"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     request_id = Column('request_id', Integer, ForeignKey("detectors_requests_data.id"), nullable=False)
-    detected = Column('detected', String, nullable=False, default="none")
+    detected = Column('detected', String(1000), nullable=False, default="none")
     from_server_id = Column('from_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    to_ip = Column('to_ip', String, nullable=False)
+    to_ip = Column('to_ip', String(1000), nullable=False)
 
     def __init__(self, item_id=None, request_id=None, detected=None, from_server_id=None, to_ip=None):
         self.item_id = item_id
@@ -153,7 +159,7 @@ class DetectorDataResponse(SQLAlchemy.Item):
         self.from_server_id = from_server_id
         self.to_ip = to_ip
 
-
+# This table will contain all the cookies token's of the requests that arrived to Elro
 class CookiesToken(SQLAlchemy.Item):
     __tablename__ = "cookie_token"
     item_id = Column('id', Integer, primary_key=True, unique=True)
@@ -170,6 +176,7 @@ class CookiesToken(SQLAlchemy.Item):
         self.active = active
 
 
+# This table will contain all the info needed to detected brute-force attempt
 class BruteForceDataItem(SQLAlchemy.Item):
     __tablename__ = "brute_force_data"
     item_id = Column('id', Integer, primary_key=True, unique=True)

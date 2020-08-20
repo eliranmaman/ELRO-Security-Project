@@ -23,7 +23,7 @@ class Bots(Detector):
         We can just look for the "sloppy" guys, by checking the User-Agent.
         This method will determine if the request arrive from bot or not.
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
@@ -57,7 +57,7 @@ class Bots(Detector):
 
     def __parse_bots_data(self):
         """
-        This method will send request true API to get more information about the specific User-Agent
+        This method will send request through API to get more information about the specific User-Agent
         than parse the information and return it.
         :return: dict
         """
