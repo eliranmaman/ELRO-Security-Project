@@ -1,19 +1,19 @@
 import json
 import logging
-import sys
 
 from Detectors import Detector, Sensitivity
 from config import data_path, log_dict
 import re
 
-sys.stderr = open(log_dict + "/xml_injection.log", 'a+')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-handler = logging.StreamHandler(sys.stderr)
-handler.setLevel(logging.INFO)
-handler.setFormatter(formatter)
-logger = logging.getLogger(__name__)
-logger.addHandler(handler)
+file_handler = logging.FileHandler(log_dict + "/xss_injection.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 class XMLDetector(Detector):
@@ -32,15 +32,17 @@ class XMLDetector(Detector):
     # if detected an attack attempt this method will return True and False otherwise
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
-        This method will detect an XML attack attempt by the regex and data given in the 'XMLInjection' folder
-        under 'Data' folder.
+        Just to be clear: there is not absolute way to determine if request arrive from legit user or not.
+        We can just look for the "sloppy" guys, by checking the User-Agent.
+        This method will determine if the request arrive from bot or not.
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detection
+        :param sensitivity: The sensitivity of the detecting
         :param forbidden: list of additional malicious words/regex that we wish to add to the forbidden list on runtime
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data = str(parsed_data)
+        parsed_data = str(parsed_data).upper()
+        logger.info("xml_injection got parsed_data ::--> " + parsed_data)
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
@@ -48,6 +50,8 @@ class XMLDetector(Detector):
         for malicious_phrase in self.__forbidden:
             matches = re.findall(malicious_phrase, parsed_data)
             if len(matches) > 0:
+                logger.info("Found Threat of XML ATTACK, Forbidden regex: " + malicious_phrase + " was found in: "
+                            + parsed_data)
                 return True
         return False
 

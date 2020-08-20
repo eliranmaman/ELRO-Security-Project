@@ -1,12 +1,19 @@
+import logging
 import time
 
 from DBAgent.orm import BruteForceDataItem
 from Detectors import Detector, Sensitivity, Classification
+from config import db, log_dict
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-# TODO: change brute_force_map to come from database
-# TODO: tests
-from config import db
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/brute_force.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 class BruteForce(Detector):

@@ -2,7 +2,6 @@ import os
 
 import requests
 from flask import Flask, request, Response, session
-from flask_session import Session  # new style
 # from flask.ext.session import Session  # old style
 
 app = Flask(__name__)

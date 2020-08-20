@@ -9,13 +9,22 @@ from DBAgent import Server
 from DBAgent.orm import Services, WhiteList, BlackList, DetectorRequestData, DetectorDataResponse, to_json, CookiesToken
 from Data.enums.controller_enums import ControllerResponseCode, RedirectAnswerTo, IsAuthorized
 from Detectors.user_protection import UserProtectionDetector
-from config import db, blocked_path, blocked_url
+from config import db, blocked_path, blocked_url, log_dict
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/elro_controller.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
-# TODO: 1) If we blocked we get "Secure Page" from the response detector (need to avoid check block page)
-#       2) Its making a circle click "approve" => blocked from brute force => show user protection => click "approve" => ... => ...
 """ This is the Main controller of the system 
 that will be responsible to wrap all the logic together"""
+
 
 def handle_block(func):
     @wraps(func)
@@ -67,25 +76,28 @@ class ElroController(Controller):
         self._request_data = None
         self.response_cookie = None
         self._bit_indicator = 255
-        self._logger = logging.getLogger(str(self.__class__))
 
     @handle_block
     def request_handler(self, parsed_request, original_request):
         self._request_data = DetectorRequestData(from_ip=parsed_request.from_ip)
         self._request = parsed_request
+        logger.info("Handling Request: " + str(self._request))
         session = db.get_session()
         # Get The Server id from DB
         self._server = session.query(Server).filter_by(server_dns=parsed_request.host_name).first()
         if self._server is None:
+            logger.error("Error occurred in controller, The Server is **None**")
             return ControllerResponseCode.Failed, RedirectAnswerTo.Client, original_request, parsed_request
         # check if authorized requester.
         self._request_data.to_server_id = self._server.item_id
         is_authorized = self._is_authorized(parsed_request.from_ip)
         if is_authorized == IsAuthorized.Yes:
+            logger.info("While List Case")
             self._request_data.detected = "white_list"
             db.insert(self._request_data)
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         elif is_authorized == IsAuthorized.No:
+            logger.info("Black List Case")
             self._request_data.detected = "black_list"
             db.insert(self._request_data)
             return ControllerResponseCode.NotValid, RedirectAnswerTo.Client, original_request, parsed_request
@@ -98,13 +110,15 @@ class ElroController(Controller):
             validate = detector.detect(parsed_request)
             if detector.name == "cookie_poisoning_detector" and validate:
                 # Detected => Removing cookies.
+                logger.info("Detected a Cookie... Removing")
                 original_request.headers.replace_header("Cookie", "")
             elif detector.name == "cookie_poisoning_detector" :
                 # Creating new token
+                logger.info("Creating new token")
                 self.response_cookie = CookiesToken(dns_name=parsed_request.host_name, ip=parsed_request.from_ip,
                                                     active=True, token=secrets.token_hex(256))
             elif validate:
-                self._logger.info("Detected ==================================> ", detector.name)
+                logger.info("Detected ==================================> ", detector.name)
                 self._request_data.detected = detector.name
                 db.insert(self._request_data)
                 parsed_request.decision = False
@@ -112,11 +126,13 @@ class ElroController(Controller):
         parsed_request.decision = True
         self._request_data.detected = "none"
         db.insert(self._request_data)
+        logger.info("Valid Request")
         return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
 
     @modify_response
     def response_handler(self, parsed_response, original_response):
         self._response = parsed_response
+        logger.info("The Parsed Response: " + str(self._response))
         parsed_response.from_server_id = self._server.item_id
         res_cookies = self._request.headers.get("Cookie", "")
         m = re.match(".*?Elro-Sec-Bit=.*\"(\d*)@Elro-Sec-End", res_cookies)
@@ -160,7 +176,9 @@ class ElroController(Controller):
         services = session.query(Services).filter_by(server_id=server_id).first()
         services = to_json(services, ignore_list=["item_id", "created_on", "user_id", "server_id"])
         relevant_detectors = [self._detectors[key] for key in services if int(services[key]) > 0 and key in self._detectors]
-        # print(relevant_detectors)
+        logger.info("The Relevant Detectors for the request are: "
+                    + ' '.join([str(detector) for detector in relevant_detectors]))
         return relevant_detectors
+
     def _extra_data(self, server_ip):
         pass

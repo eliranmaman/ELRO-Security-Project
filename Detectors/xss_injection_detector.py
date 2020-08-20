@@ -6,14 +6,15 @@ from config import data_path, log_dict
 import re
 import logging
 
-sys.stderr = open(log_dict + "/xss_injection.log", 'a+')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-handler = logging.StreamHandler(sys.stderr)
-handler.setLevel(logging.INFO)
-handler.setFormatter(formatter)
-logger = logging.getLogger(__name__)
-logger.addHandler(handler)
+file_handler = logging.FileHandler(log_dict + "/xss_injection.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 class XSSDetector(Detector):
@@ -50,6 +51,7 @@ class XSSDetector(Detector):
             except Exception as e:
                 logger.exception("Exception with " + forbidden_word)
             if len(forbidden_words) > 0:
+                logger.info("Found Threat of XSS ATTACK, Forbidden regex: " + forbidden_word + " was found in: " + parsed_data)
                 forbidden_word_list.append(forbidden_words)
 
         # if detected a forbidden word it is probably an attack

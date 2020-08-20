@@ -1,6 +1,6 @@
 import logging
 import sys
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
 import requests
 
 from Controllers.elro_controller import ElroController
@@ -14,14 +14,19 @@ from config import server
 from config import log_dict
 from Detectors import SQLDetector, BruteForce, BotsDetector, XSSDetector, XMLDetector
 
-
-sys.stderr = open(log_dict + "/elro_proxy.log", 'a+')
-handler = logging.StreamHandler(sys.stderr)
-handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
 logger = logging.getLogger(__name__)
-logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/elro_proxy.log", 'a+')
+file_handler.setFormatter(formatter)
+
+# stream_handler = logging.StreamHandler()
+# stream_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+# logger.addHandler(stream_handler)
 
 
 """This class is responsible to be the main proxy of the waf 
@@ -40,7 +45,7 @@ class BasicProxy2(Proxy):
         if not self._running:
             self._running = True
             server_address = (server["address"], self._port)
-            self._httpd = HTTPServer(server_address, BasicProxy2.RequestHandler2)
+            self._httpd = ThreadingHTTPServer(server_address, BasicProxy2.RequestHandler2)
             logger.info('Proxy is alive: \n\tPort: {}\n\tAddress: {}'.format(self._port, server["address"]))
 
             self._httpd.serve_forever()  # should be in another Thread.

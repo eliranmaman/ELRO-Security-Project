@@ -1,45 +1,41 @@
 import json
-
+import logging
 import requests
 from flask import Flask, request
 from flask_restful import Resource, Api
-
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from DBAgent.orm import Users, Services, Server
 from Detectors.user_protection import UserProtectionDetector
-from config import db
+from config import db, log_dict
 
 app = Flask(__name__)
 api = Api(app)
 
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+#
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#
+# file_handler = logging.FileHandler(log_dict + "/api_agent.log", 'a+')
+# file_handler.setFormatter(formatter)
+#
+# logger.addHandler(file_handler)
+
 
 class LoginHandler(Resource):
     def post(self):
-        print("login")
         incoming_json = request.get_json()
         stored_user = db.get_session().query(Users).filter(Users.email == incoming_json['email']).one()
-        print(stored_user.password)
         decrypted_stored_user = db.decrypt(stored_user)
         password = decrypted_stored_user.password
-        print("from DB:" + password)
-        print("incoming:" + incoming_json['password'])
+
         if password == incoming_json['password']:
             if decrypted_stored_user.is_admin == 1:
-                print("res 2")
+                print("Admin login has occurred: => " + incoming_json['email'])
                 return 2
-            print("res 1")
             return 1
-        print("res 0")
+        print("Login Failure has occurred: IP=>"+ request.remote_addr + incoming_json['email'])
         return 0
-
-    def get(self):
-        session = db.get_session()
-        user = db.get_session().query(Users).get(1)
-        # session.query(Users).filter_by(active=True).all() / .first()
-        # session.query(Users).filter_by(active=True).order_by(DESC(Users.id).all() / .first()
-        user.email = "royi@gmail.com"
-        print(user.email)
-        session.commit()
-        return {}
 
 
 def get_user_id_by_email(email):
@@ -48,11 +44,6 @@ def get_user_id_by_email(email):
 
 
 def create_services_object(user_id, incoming_json, server_id):
-    print("adding new services object to db")
-    print(user_id)
-    print(incoming_json)
-    print(server_id)
-    print("|***&*&*&******")
     users_services = Services(user_id=user_id,
                               sql_detector=int(incoming_json['services']['sql_detector']),
                               bots_detector=int(incoming_json['services']['bots_detector']),
@@ -69,9 +60,8 @@ class RegisterHandler(Resource):
     """ registers a new client, and his protection preferences """
 
     def post(self):
-        print("registering")
         incoming_json = request.get_json()
-        print(incoming_json)
+        print("*** Registering new Client ***" + incoming_json['users']['email'])
         user = Users(email=incoming_json['users']['email'], password=incoming_json['users']['password'])
         db.insert(user)
         user_id = user.item_id
@@ -83,11 +73,9 @@ class RegisterHandler(Resource):
         user_services = create_services_object(user_id=user_id, incoming_json=incoming_json, server_id=server_id)
         try:
             db.insert(user_services)
-            print("SUCCESS!!!")
             return 1
         except Exception as e:
-            print("ERROR!!!")
-            print(e)
+            print("Error when registering new client, Error: ", e)
             return 0
 
 
@@ -97,7 +85,6 @@ def serialize_sets(obj):
 
     return obj
 
-from sqlalchemy.ext.declarative import DeclarativeMeta
 
 class AlchemyEncoder(json.JSONEncoder):
 
@@ -108,7 +95,7 @@ class AlchemyEncoder(json.JSONEncoder):
             for field in [x for x in dir(obj) if not x.startswith('_') and x != 'metadata']:
                 data = obj.__getattribute__(field)
                 try:
-                    json.dumps(data) # this will fail on non-encodable values, like other classes
+                    json.dumps(data)  # this will fail on non-encodable values, like other classes
                     fields[field] = data
                 except TypeError:
                     fields[field] = None
@@ -120,12 +107,9 @@ class AlchemyEncoder(json.JSONEncoder):
 
 class GetActiveServicesHandler(Resource):
     def post(self):
-        print("GetActiveServices")
         incoming_json = request.get_json()
         user_id = get_user_id_by_email(email=incoming_json["email"])
         try:
-            print("GetActiveServicesHandler")
-            print("user: ==>", user_id)
             joined_statuses = []
             all_servers = db.get_session().query(Server).filter(Server.user_id == user_id).all()
             for server in all_servers:
@@ -138,7 +122,7 @@ class GetActiveServicesHandler(Resource):
             return joined_statuses
 
         except Exception as e:
-            print("error", e)
+            print("error on GetActiveServicesHandler", e)
             return False
 
 
@@ -212,8 +196,6 @@ class AddNewWebsiteHandler(Resource):
     """ adding a new website, and its specific protection preferences to an existing client """
     def post(self):
         incoming_json = request.get_json()
-        print("adding new website")
-        print(incoming_json)
         user_id = get_user_id_by_email(email=incoming_json["email"])
         server = Server(user_id=user_id,
                         server_ip=incoming_json['services']['ip'],
@@ -225,7 +207,7 @@ class AddNewWebsiteHandler(Resource):
             db.insert(users_services)
             return 1
         except Exception as e:
-
+            print("Error when trying to add a new website: " + incoming_json['services']['website'], e)
             return 0
 
 
@@ -236,7 +218,7 @@ class UserProtectorHandler(Resource):
         host_to_detect = host_to_detect.replace("http://", "")
         host_to_detect = host_to_detect.replace("https://", "")
         host_to_detect = "https://"+host_to_detect
-        print("protecting: "+ host_to_detect)
+        print("getting info with UserProtectionDetector for: " + host_to_detect)
         response = requests.get(host_to_detect)
         upc = UserProtectionDetector(response)
         resp = upc.detect()

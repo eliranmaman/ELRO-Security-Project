@@ -24,13 +24,6 @@ class Controller(object):
         """
         raise NotImplementedError()
 
-    # def _parse(self, data):
-    #     """
-    #     This function will be responsible to activate the parser.
-    #     :return: dict, with the parsed data.
-    #     """
-    #     raise NotImplementedError()
-
     def _is_authorized(self, requester_ip):
         """
         This function will check if the request is authorized in terms of:
