@@ -1,9 +1,9 @@
 import json
 import re
 
-from Detectors import Detector, Sensitivity
+from Detectors import Detector
+from Knowledge_Base import Sensitivity
 from Detectors.sql_injection_detector import create_content_as_str
-from config import data_path, config_path
 
 
 # logger = logging.getLogger(__name__)

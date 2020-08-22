@@ -1,4 +1,5 @@
-from Detectors import Detector, Sensitivity, Classification
+from Detectors import Detector
+from Knowledge_Base import Sensitivity, Classification
 
 
 class CSRF(Detector):

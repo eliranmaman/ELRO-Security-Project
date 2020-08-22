@@ -1,7 +1,8 @@
 import time
 
 from DBAgent.orm import BruteForceDataItem
-from Detectors import Detector, Sensitivity, Classification
+from Detectors import Detector
+from Knowledge_Base import Sensitivity, Classification
 from config import db
 
 

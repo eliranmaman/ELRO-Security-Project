@@ -1,7 +1,8 @@
 import re
 
 from DBAgent import CookiesToken
-from Detectors import Detector, Sensitivity, Classification
+from Detectors import Detector
+from Knowledge_Base import Sensitivity, Classification
 from config import db
 
 

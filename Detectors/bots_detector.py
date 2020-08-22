@@ -1,7 +1,8 @@
 import requests
 import json
 
-from Detectors import Detector, Sensitivity, Classification
+from Detectors import Detector
+from Knowledge_Base import Sensitivity, Classification
 
 # logger = logging.getLogger(__name__)
 # logger.setLevel(logging.INFO)
@@ -79,7 +80,7 @@ class Bots(Detector):
             return Classification.NoConclusion
         # ---- Parse the information ---- #
         bots_response = bots_response["parse"]
-        return {key: bots_response.get(key, value) for key, value in self.kb["bots_detectors"]}
+        return {key: bots_response.get(key, value) for key, value in self.kb["bots_detectors"].items()}
 
     def _is_legitimate(self, legitimate, parsed_data):
         """
