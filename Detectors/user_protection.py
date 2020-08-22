@@ -1,5 +1,4 @@
 import json
-import logging
 import math
 import re
 from functools import wraps
@@ -11,7 +10,6 @@ from config import detectors_config_path, url_regex
 def invoke_detector(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        logging.info("Invoking: " + func.__name__)
         if is_on(self.map_bit[func.__name__], self.bit_indicator):
             is_detected = func(self, *args, **kwargs)
             if is_detected:
