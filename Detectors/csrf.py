@@ -27,11 +27,11 @@ class CSRF(Detector):
         sec_fetch_site = parsed_data.headers.get(self.kb["relevant_header"], None)
         referer = parsed_data.headers.get("Referer", None)
         referer = urlparse(referer) if referer is not None else referer
-        referer = '{uri.netloc}'.format(uri=referer) if referer is not None else referer
+        referer = '{uri.netloc}'.format(uri=referer).lower() if referer is not None else referer
         # If the request is in the same-origin return False
         if sec_fetch_site == self.kb["same_origin"] and sec_fetch_site is not None:
             return False
-        if referer != parsed_data.host_name and not None:
+        if referer == parsed_data.host_name.lower() and referer is not None:
             return False
         # Sensitivity policy
         method = parsed_data.method

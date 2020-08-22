@@ -17,8 +17,8 @@ app.url_map.add(Rule('/<path:path>', endpoint='proxy'))
 # The available detectors for the Controller
 detectors = {
     # "sql_detector": SQLDetector,
-    "xss_detector": XSSDetector,
-    "xml_detector": XMLDetector,
+    # "xss_detector": XSSDetector,
+    # "xml_detector": XMLDetector,
     "csrf_detector": CSRF,
     "bruteforce_detector": BruteForce,
     "bots_detector": BotsDetector,
