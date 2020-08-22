@@ -11,7 +11,8 @@ from Knowledge_Base.enums.logs_enums import LogLevel
 from Parser.parser import FlaskHTTPRequestParser, HTTPResponseParser
 
 app = Flask(__name__)
-app.url_map.add(Rule('/', endpoint='proxy'))
+app.url_map.add(Rule('/', endpoint='proxy', defaults={'path': ""}))
+app.url_map.add(Rule('/<path:path>', endpoint='proxy'))
 
 # The available detectors for the Controller
 detectors = {
@@ -68,8 +69,6 @@ def request_handler():
 
 
 @app.endpoint('proxy')
-@app.route('/', defaults={'path': ""})
-@app.route('/<path:path>')
 def proxy(path):
     log("Request has arrived: {}".format(request.url), LogLevel.INFO, request_handler)
     return request_handler()
