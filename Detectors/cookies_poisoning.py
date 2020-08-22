@@ -1,26 +1,14 @@
-import logging
 import re
 
 from DBAgent import CookiesToken
 from Detectors import Detector, Sensitivity, Classification
-from Detectors.detectors_config import token_regex
-from config import db, log_dict
+from config import db
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-file_handler = logging.FileHandler(log_dict + "/cookie_poisoning.log", 'a+')
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
 
 class CookiesPoisoning(Detector):
 
     def __init__(self):
         super().__init__()
-        self.name = "cookie_poisoning_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
@@ -52,7 +40,7 @@ class CookiesPoisoning(Detector):
             filter_by(active=True, ip=parsed_data.from_ip, dns_name=parsed_data.host_name).first()
         if cookies_token is None:
             return True
-        m = re.match(token_regex, cookies)
+        m = re.match(self.kb["token_regex"], cookies)
         if m is None:
             return True
         secret_value = m.group(1)

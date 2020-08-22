@@ -1,0 +1,4 @@
+{
+  "name": "cookie_poisoning_detector",
+  "token_regex": ".*?Elro-Sec-Token=.*\"(.*?)@Elro-Sec-End\";"
+}
