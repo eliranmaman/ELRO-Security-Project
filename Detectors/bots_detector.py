@@ -4,16 +4,6 @@ import json
 from Detectors import Detector
 from Knowledge_Base import Sensitivity, Classification
 
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
-#
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#
-# file_handler = logging.FileHandler(log_dict + "/bots_detector.log", 'a+')
-# file_handler.setFormatter(formatter)
-#
-# logger.addHandler(file_handler)
-
 
 class Bots(Detector):
 

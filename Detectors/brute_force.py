@@ -97,3 +97,6 @@ class BruteForce(Detector):
 
     def get_forbidden_list(self):
         return self._forbidden
+
+    def refresh(self):
+        pass

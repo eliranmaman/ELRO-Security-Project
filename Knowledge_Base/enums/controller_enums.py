@@ -16,4 +16,3 @@ class IsAuthorized(enum.Enum):
     Yes = 0
     No = 1
     NoData = 2
-    

@@ -1,7 +1,7 @@
 import re
 
 from Detectors import Detector
-from Knowledge_Base import Sensitivity, Classification
+from Knowledge_Base import Sensitivity
 
 
 def create_content_as_str(content):
