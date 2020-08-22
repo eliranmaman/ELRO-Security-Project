@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from Detectors import Detector
 from Knowledge_Base import Sensitivity, Classification
 
@@ -23,8 +25,13 @@ class CSRF(Detector):
             return False
         # Getting the request Type (e.g same-origin)
         sec_fetch_site = parsed_data.headers.get(self.kb["relevant_header"], None)
+        referer = parsed_data.headers.get("Referer", None)
+        referer = urlparse(referer) if referer is not None else referer
+        referer = '{uri.netloc}'.format(uri=referer) if referer is not None else referer
         # If the request is in the same-origin return False
-        if sec_fetch_site == self.kb["same_origin"]:
+        if sec_fetch_site == self.kb["same_origin"] and sec_fetch_site is not None:
+            return False
+        if referer != parsed_data.host_name and not None:
             return False
         # Sensitivity policy
         method = parsed_data.method

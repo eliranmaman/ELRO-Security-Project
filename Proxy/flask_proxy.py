@@ -41,11 +41,12 @@ def request_handler():
         log("Redirecting to {}".format(url), LogLevel.INFO, request_handler)
         response = Response(status=302, headers={"Location": url})
     elif response_code == ControllerResponseCode.Valid:
+        send_headers = {key:value for key, value in new_request.headers}
         log("The Request for {} valid and OK".format(request.url), LogLevel.INFO, request_handler)
         resp = requests.request(
             method=parsed_request.method, url=url, verify=True,
-            json=request.get_json()
-
+            json=new_request.get_json(), headers=send_headers, params=new_request.args,
+            data=new_request.form
         )
         log("The Response is {}".format(to_json(resp)), LogLevel.DEBUG, request_handler)
         parser = HTTPResponseParser(parsed_request)
