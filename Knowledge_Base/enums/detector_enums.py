@@ -11,3 +11,8 @@ class Classification(enum.Enum):
     Detected = 1
     Clean = 2
     NoConclusion = 3
+
+
+class Detectors(enum.Enum):
+    SQL_INJ = 1
+    XSS_INJ = 2
