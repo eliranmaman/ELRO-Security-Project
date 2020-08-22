@@ -8,7 +8,7 @@ from DBAgent import Server
 from DBAgent.orm import Services, WhiteList, BlackList, DetectorRequestData, DetectorDataResponse, to_json, CookiesToken
 from Knowledge_Base.enums.controller_enums import ControllerResponseCode, RedirectAnswerTo, IsAuthorized
 from Detectors.user_protection import UserProtectionDetector, UserProtectionResults
-from config import db, blocked_path, blocked_url
+from config import db
 
 
 # TODO: 1) Its making a circle click "approve" => blocked from brute force => show user protection => click "approve" => ... => ... (I think it's done.)
@@ -22,8 +22,8 @@ def handle_block(func):
     def wrapper(self, *args, **kwargs):
         response_code, redirect_to, the_request, parsed_request = func(self, *args, **kwargs)
         if response_code == ControllerResponseCode.NotValid:
-            parsed_request.host_name = blocked_url
-            parsed_request.path = blocked_path
+            parsed_request.host_name = self.kb["blocked_url"]
+            parsed_request.path = self.kb["blocked_path"]
             parsed_request.query = ""
         return response_code, redirect_to, the_request, parsed_request
 
@@ -34,23 +34,22 @@ def modify_response(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         detector_result, redirect_to, the_response = func(self, *args, **kwargs)
-        if detector_result.bit_map == 0 or "text/html" not in the_response.headers.get('Content-Type', ""):
+        if detector_result.bit_map == self.kb["clean_bit"] or self.kb["file_type"] not in the_response.headers.get('Content-Type', ""):
             return ControllerResponseCode.Valid, redirect_to, the_response.content
-        with open("Controllers/safe_place.html", "r") as file:
+        with open(self.kb["safe_place_path"], "r") as file:
             new_content = file.read()
-        to_add = "".join(["<li>{}</li>".format(i) for i in detector_result.detected_alerts])
+        to_add = "".join([self.kb["join_format"].format(i) for i in detector_result.detected_alerts])
         if detector_result.csrf_js_files:
-            csrf_js_files = "Files that loaded from other urls:<ul style='font-size: small;'>{}</ul>".format(
-                "".join(["<li>{}</li>".format(i) for i in detector_result.csrf_urls]))
+            csrf_js_files = self.kb["csrf_files_alert_format"].format("".join([self.kb["join_format"].format(i) for i in detector_result.csrf_urls]))
         else:
             csrf_js_files = ""
-        new_content = new_content.replace("#CsrfJsFIles#", csrf_js_files)
-        new_content = new_content.replace("#Activites#", to_add, 1)
-        new_content = new_content.replace("#OriginalLocation#", str(self._request.path), 1)
+        new_content = new_content.replace(self.kb["js_file_code"], csrf_js_files)
+        new_content = new_content.replace(self.kb["activities_code"], to_add, 1)
+        new_content = new_content.replace(self.kb["location_code"], str(self._request.path), 1)
         new_cookie_value = cookies.SimpleCookie()
-        new_cookie_value['Elro-Sec-Bit'] = "{}@Elro-Sec-End".format(self._bit_indicator ^ detector_result.bit_map)
+        new_cookie_value['Elro-Sec-Bit'] = self.kb["elro_sec_bit_format"].format(self._bit_indicator ^ detector_result.bit_map)
         new_cookie_value['Elro-Sec-Bit']['max-age'] = 2592000  # 30 days
-        new_content = new_content.replace("#NewBitValue#", str(new_cookie_value).replace("Set-Cookie:", "", 1))
+        new_content = new_content.replace(self.kb["new_bit_code"], str(new_cookie_value).replace("Set-Cookie:", "", 1))
         send_content = bytes(new_content.encode('utf_8'))
         return ControllerResponseCode.NotValid, redirect_to, send_content
 
@@ -96,10 +95,10 @@ class ElroController(Controller):
         for detector_constructor in detectors:
             detector = detector_constructor()
             validate = detector.detect(parsed_request)
-            if detector.name == "cookie_poisoning_detector" and validate:
+            if detector.name in self.kb["non_blocking_detectors"] and validate:
                 # Detected => Removing cookies.
                 original_request.headers.replace_header("Cookie", "")
-            elif detector.name == "cookie_poisoning_detector":
+            elif detector.name in self.kb["non_blocking_detectors"]:
                 # Creating new token
                 self.response_cookie = CookiesToken(dns_name=parsed_request.host_name, ip=parsed_request.from_ip,
                                                     active=True, token=secrets.token_hex(256))
@@ -117,7 +116,7 @@ class ElroController(Controller):
     @modify_response
     def response_handler(self, parsed_response, original_response):
         # If the response is the block page => don't activate the response detector.
-        if blocked_url in self._request.host_name and self._request.path == blocked_path:
+        if self.kb["blocked_url"] in self._request.host_name and self._request.path == self.kb["blocked_path"]:
             return UserProtectionResults(), RedirectAnswerTo.Client, original_response
         self._response = parsed_response
         parsed_response.from_server_id = self._server.item_id
@@ -131,9 +130,9 @@ class ElroController(Controller):
                                              to_ip=parsed_response.to_ip)
         db.insert(detector_data)
         # User Protection Bit
-        if m is None and "text/html" in self._request.headers.get("Content-Type", ""):
+        if m is None and self.kb["file_type"] in self._request.headers.get("Content-Type", ""):
             bit_cookie = cookies.SimpleCookie()
-            bit_cookie['Elro-Sec-Bit'] = "{}@Elro-Sec-End".format(self._bit_indicator)
+            bit_cookie['Elro-Sec-Bit'] = self.kb["elro_sec_bit_format"].format(self._bit_indicator)
             bit_cookie['Elro-Sec-Bit']['max-age'] = 2592000  # 30 days
             original_response.headers["Set-Cookie"] = bit_cookie
         return results, RedirectAnswerTo.Client, original_response
@@ -161,7 +160,7 @@ class ElroController(Controller):
     def _list_of_detectors(self, server_id):
         session = db.get_session()
         services = session.query(Services).filter_by(server_id=server_id).first()
-        services = to_json(services, ignore_list=["item_id", "created_on", "user_id", "server_id"])
+        services = to_json(services, ignore_list=self.kb["ignore_list"])
         return [self._detectors[key] for key in services if key in self._detectors and services[key]]
 
     def _extra_data(self, server_ip):

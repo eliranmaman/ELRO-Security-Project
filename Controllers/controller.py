@@ -1,3 +1,6 @@
+import json
+
+from config import controller_config_path
 
 
 class Controller(object):
@@ -5,6 +8,9 @@ class Controller(object):
     def __init__(self, detectors):
         self._detectors = detectors  # dict of detectors available for the Controller.
         self._db = None  # will hold the Database connection.
+        self.kb_path = "{}/{}/config".format(controller_config_path, self.__class__.__name__)
+        self.kb = dict()
+        self.load_knowledge_base()
 
     def request_handler(self, request, original_request):
         """
@@ -52,3 +58,11 @@ class Controller(object):
         :return: dict ('legitimate': list, 'forbidden': list)
         """
         raise NotImplementedError()
+
+    def load_knowledge_base(self):
+        with open(self.kb_path, "r", encoding="utf-8") as kb_file:
+            kb_data = json.load(kb_file)
+            self.kb.update(kb_data)
+        with open("{}/controller".format(controller_config_path), "r", encoding="utf-8") as kb_file:
+            kb_data = json.load(kb_file)
+            self.kb.update(kb_data)

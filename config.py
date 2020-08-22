@@ -11,13 +11,13 @@ else:
         "address": "193.106.55.115",
         "port": 80
     }
-log_dict = "logs/"
 controller = None
 db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
 db.connect()
 data_path = "Knowledge_Base"
 config_path = "{}/config".format(data_path)
 detectors_config_path = "{}/detectors".format(config_path)
+controller_config_path = "{}/controllers".format(config_path)
 cookies_map = dict()
 brute_force_map = dict()
 
@@ -26,8 +26,3 @@ url_regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^
 
 enc_list = ["content", "headers", "cookies"]
 enc_key = b'&E)H@McQeThWmZq4t7w!z%C*F-JaNdRg'
-
-blocked_url = "elro-sec.com"
-blocked_path = "/blocked.html"
-
-log_format = "{}"
