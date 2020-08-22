@@ -1,6 +1,9 @@
 from datetime import datetime
 from urllib.parse import urlparse
 
+from Knowledge_Base import log, to_json
+from Knowledge_Base.enums.logs_enums import LogLevel
+
 
 class HttpResponse(object):
 
@@ -90,6 +93,8 @@ class HTTPResponseParser(Parser):
         parsed_data.to_ip = self.__request.from_ip
         parsed_data.time_stamp = datetime.now()
         parsed_data.from_dns_name = self.__request.host_name
+        log("The Parsed data is: {}".format(to_json(parsed_data)), LogLevel.DEBUG, self.parse)
+        log("Finish parsing the request.", LogLevel.INFO, self.parse)
         return parsed_data
 
 
@@ -97,7 +102,9 @@ class FlaskHTTPRequestParser(Parser):
 
     def parse(self, data_to_parse):
         parsed_data = HttpRequest()
+        log("Parse the url {}".format(data_to_parse.url), LogLevel.DEBUG, self.parse)
         url = urlparse(data_to_parse.url)
+        log("The Parsed url is: {}".format(url), LogLevel.DEBUG, self.parse)
         parsed_data.method = "{}".format(data_to_parse.method).upper()
         parsed_data.content = data_to_parse.get_data()
         parsed_data.headers = data_to_parse.headers
@@ -108,4 +115,6 @@ class FlaskHTTPRequestParser(Parser):
         parsed_data.time_stamp = datetime.now()
         parsed_data.args = data_to_parse.args
         parsed_data.form = data_to_parse.form
+        log("The Parsed data is: {}".format(to_json(parsed_data)), LogLevel.DEBUG, self.parse)
+        log("Finish parsing the request.", LogLevel.INFO, self.parse)
         return parsed_data

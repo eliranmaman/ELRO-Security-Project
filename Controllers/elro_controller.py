@@ -5,8 +5,9 @@ from http import cookies
 
 from Controllers import Controller
 from DBAgent import Services, WhiteList, BlackList, DetectorRequestData, DetectorDataResponse, CookiesToken, Server
-from Knowledge_Base import to_json, ControllerResponseCode, RedirectAnswerTo, IsAuthorized
+from Knowledge_Base import to_json, ControllerResponseCode, RedirectAnswerTo, IsAuthorized, log
 from Detectors import UserProtectionDetector, UserProtectionResults
+from Knowledge_Base.enums.logs_enums import LogLevel
 from config import db
 
 
@@ -74,23 +75,31 @@ class ElroController(Controller):
         self._request = parsed_request
         session = db.get_session()
         # Get The Server id from DB
+        log("Looking for the server on the DataBase {}".format(parsed_request.host_name), LogLevel.DEBUG, self.request_handler)
         self._server = session.query(Server).filter_by(server_dns=parsed_request.host_name).first()
         if self._server is None:
+            log("Server not found at the DataBase {}".format(parsed_request.host_name), LogLevel.DEBUG, self.request_handler)
             return ControllerResponseCode.Failed, RedirectAnswerTo.Client, original_request, parsed_request
         # check if authorized requester.
         self._request_data.to_server_id = self._server.item_id
+        log("Activate _is_authorized method", LogLevel.DEBUG, self.request_handler)
         is_authorized = self._is_authorized(parsed_request.from_ip)
         if is_authorized == IsAuthorized.Yes:
+            log("_is_authorized method results is Yes", LogLevel.DEBUG, self.request_handler)
             self._request_data.detected = "white_list"
             db.insert(self._request_data)
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         elif is_authorized == IsAuthorized.No:
+            log("_is_authorized method results is No", LogLevel.DEBUG, self.request_handler)
             self._request_data.detected = "black_list"
             db.insert(self._request_data)
             return ControllerResponseCode.NotValid, RedirectAnswerTo.Client, original_request, parsed_request
         # Get list of detectors for the server
+        log("_is_authorized method results is NoConclusions", LogLevel.DEBUG, self.request_handler)
         parsed_request.to_server_id = self._server.item_id
+        log("Activate _list_of_detectors method", LogLevel.DEBUG, self.request_handler)
         detectors = self._list_of_detectors(self._server.item_id)
+        log("_list_of_detectors results is {}".format(detectors), LogLevel.DEBUG, self.request_handler)
         for detector_constructor in detectors:
             detector = detector_constructor()
             validate = detector.detect(parsed_request)
@@ -102,13 +111,16 @@ class ElroController(Controller):
                 self.response_cookie = CookiesToken(dns_name=parsed_request.host_name, ip=parsed_request.from_ip,
                                                     active=True, token=secrets.token_hex(256))
             elif validate:
-                print("Detected ==================================> ", detector.name)
+                log("Detector {} is detected unusual activity".format(detector.name), LogLevel.INFO, self.request_handler)
                 self._request_data.detected = detector.name
+                log("Insert Information to database".format(detector.name), LogLevel.DEBUG, self.request_handler)
                 db.insert(self._request_data)
                 parsed_request.decision = False
                 return ControllerResponseCode.NotValid, RedirectAnswerTo.Client, original_request, parsed_request
+        log("Nothing unusual detected by the detectors.", LogLevel.INFO, self.request_handler)
         parsed_request.decision = True
         self._request_data.detected = "none"
+        log("Insert Information to database", LogLevel.DEBUG, self.request_handler)
         db.insert(self._request_data)
         return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
 

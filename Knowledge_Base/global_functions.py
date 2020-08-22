@@ -1,3 +1,7 @@
+from datetime import datetime
+import traceback
+
+
 def create_content_as_str(content):
     my_str = ""
     for item, val in content.__dict__.items():
@@ -20,3 +24,10 @@ def from_json(json_data, obj):
     for attr, value in json_data.items():
         obj.__dict__[attr] = value
     return obj
+
+
+def log(msg, level, func, stacktrace=False):
+    log_msg = "{} - [{}][{}] {}".format(datetime.now(), level.value, func.__name__, msg)
+    print(log_msg)
+    if stacktrace:
+        traceback.print_exc()
