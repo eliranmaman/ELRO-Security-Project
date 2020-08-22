@@ -1,6 +1,8 @@
 from datetime import datetime
 import traceback
 
+from Knowledge_Base.enums.logs_enums import LogLevel
+
 
 def create_content_as_str(content):
     my_str = ""
@@ -28,6 +30,9 @@ def from_json(json_data, obj):
 
 def log(msg, level, func, stacktrace=False):
     log_msg = "{} - [{}][{}] {}".format(datetime.now(), level.value, func.__name__, msg)
+    log_msg_debug = "{} - [{}][{}] {}".format(datetime.now(), LogLevel.DEBUG, func.__name__, msg)
     print(log_msg)
     if stacktrace:
         traceback.print_exc()
+    if level != LogLevel.DEBUG:
+        print(log_msg_debug)
