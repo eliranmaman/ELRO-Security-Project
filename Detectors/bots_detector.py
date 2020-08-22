@@ -1,19 +1,16 @@
-import time
 import requests
 import json
 
-from Detectors import Detector, Sensitivity, Classification
-from config import BOT_KEY, BOTS_URL
-
-# TODO: tests
+from Detectors import Detector
+from Knowledge_Base import Sensitivity, Classification
 
 
 class Bots(Detector):
 
     def __init__(self):
         super().__init__()
-        self._bots_url = "{}/user_agent_parse".format(BOTS_URL)
-        self._bots_header = {"X-API-KEY": BOT_KEY}
+        self._bots_url = "{}/user_agent_parse".format(self.kb["BOTS_URL"])
+        self._bots_header = {"X-API-KEY": self.kb["BOT_KEY"]}
         self._bots_data = {"parse_options": {}}
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
@@ -22,7 +19,7 @@ class Bots(Detector):
         We can just look for the "sloppy" guys, by checking the User-Agent.
         This method will determine if the request arrive from bot or not.
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
@@ -32,16 +29,16 @@ class Bots(Detector):
         if check_pre_processing == Classification.Clean:
             return False
         # ------ This code will run if the path is in the forbidden list ------ #
-        user_agent = parsed_data["headers"].get('User-Agent', None)
+        user_agent = parsed_data.headers.get('User-Agent', None)
         if user_agent is None:
             return True
         self._bots_data["user_agent"] = user_agent
         user_agent_data = self.__parse_bots_data()
         is_detected = False
-        print(user_agent_data)
         # Start Check by the web sensitivity #
+        # logger.info("Starting Check by the web sensitivity")
         # ----- Regular ----- #
-        is_detected = is_detected or user_agent_data["is_restricted"] or  user_agent_data["is_abusive"]
+        is_detected = is_detected or user_agent_data["is_restricted"] or user_agent_data["is_abusive"]
         if sensitivity == Sensitivity.Regular or is_detected:
             return is_detected
         # ----- Sensitive  ----- #
@@ -57,7 +54,7 @@ class Bots(Detector):
 
     def __parse_bots_data(self):
         """
-        This method will send request true API to get more information about the specific User-Agent
+        This method will send request through API to get more information about the specific User-Agent
         than parse the information and return it.
         :return: dict
         """
@@ -73,14 +70,7 @@ class Bots(Detector):
             return Classification.NoConclusion
         # ---- Parse the information ---- #
         bots_response = bots_response["parse"]
-        return {
-            "software_type": bots_response.get("software_type", None),
-            "hardware_type": bots_response.get("hardware_type", None),
-            "is_weird": bots_response.get("is_weird", False),
-            "is_restricted": bots_response.get("is_restricted", False),
-            "is_spam": bots_response.get("is_spam", False),
-            "is_abusive": bots_response.get("is_abusive", False)
-        }
+        return {key: bots_response.get(key, value) for key, value in self.kb["bots_detectors"].items()}
 
     def _is_legitimate(self, legitimate, parsed_data):
         """
@@ -90,7 +80,7 @@ class Bots(Detector):
         :return: Classification Enum
         """
         # Cleaning the request path
-        req_path = parsed_data["path"].strip("/")
+        req_path = parsed_data.path.strip("/")
         for path in legitimate:
             if req_path in path:
                 return Classification.Clean

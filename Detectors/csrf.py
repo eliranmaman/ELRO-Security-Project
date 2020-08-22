@@ -1,14 +1,16 @@
-from Detectors import Detector, Sensitivity, Classification
-
-# TODO: tests
+from Detectors import Detector
+from Knowledge_Base import Sensitivity, Classification
 
 
 class CSRF(Detector):
 
+    def __init__(self):
+        super().__init__()
+
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: The path's that forbidden in any case for cross-site (list)
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
@@ -20,17 +22,17 @@ class CSRF(Detector):
         elif check_pre_processing == Classification.Clean:
             return False
         # Getting the request Type (e.g same-origin)
-        sec_fetch_site = parsed_data["headers"].get('Sec-Fetch-Site', None)
+        sec_fetch_site = parsed_data.headers.get(self.kb["relevant_header"], None)
         # If the request is in the same-origin return False
-        if sec_fetch_site == "same-origin":  # TODO: check if the attacker can change this header
+        if sec_fetch_site == self.kb["same_origin"]:
             return False
         # Sensitivity policy
-        method = parsed_data["method"]
+        method = parsed_data.method
         if sensitivity == Sensitivity.Regular:
-            if method == "POST" or method == "DELETE" or method == "PUT":
+            if method in self.kb["sensitivity"][str(Sensitivity.Regular.value)]:
                 return True
         elif sensitivity == Sensitivity.Sensitive:
-            if method != "GET":
+            if method not in self.kb["sensitivity"][str(Sensitivity.Sensitive.value)]:
                 return True
         else:  # Sensitivity.VerySensitive
             return True
@@ -45,7 +47,7 @@ class CSRF(Detector):
         :return: Classification Enum
         """
         # Cleaning the request path
-        req_path = parsed_data["path"]
+        req_path = parsed_data.path.strip("/")
         for path in legitimate:
             if req_path in path:
                 return Classification.Clean

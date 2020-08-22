@@ -1,0 +1,24 @@
+{
+  "name": "user_protection",
+  "bit_map": {
+      "__detect_inline_scripts": 1,
+      "__detect_script_files": 2,
+      "__access_cookies": 4,
+      "__iframe": 8,
+      "__detect_csrf_requests": 16
+  },
+  "bit_map_errors": {
+    "1": "This site is using inline scripts",
+    "2": "This site is loading JavaScript files",
+    "4": "This site attempt to access your cookies",
+    "8": "This site attempt to load IFRAME (another website) in your browser",
+    "16": "This site attempt to invoke Cross Site Requests (CSRF)"
+  },
+  "__detect_inline_scripts": "<script",
+  "__detect_script_files": {
+    "headers": "Content-Type",
+    "list": [".js\"", "<script src=\"", "\"></script>"]
+  },
+  "__access_cookies": ["document.cookie", "browser.cookie"],
+  "__iframe": ["iframe"]
+}

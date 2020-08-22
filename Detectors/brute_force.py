@@ -1,65 +1,65 @@
 import time
 
-from Detectors import Detector, Sensitivity, Classification
-from config import brute_force_map as map
+from DBAgent.orm import BruteForceDataItem
+from Detectors import Detector
+from Knowledge_Base import Sensitivity, Classification
+from config import db
 
-
-# TODO: change brute_force_map to come from database
-# TODO: tests
 
 class BruteForce(Detector):
 
     def __init__(self):
         super().__init__()
-        self._data_map = map
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
         The method will check path that are in the forbidden list, for every path in this list
         the method will perform brute force check by number of request in the last 1min.
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
         """
         # Pre Processing
+        legitimate = self.kb["legitimate"] if type(legitimate) is not list else legitimate+self.kb["legitimate"]
         check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
             return False
         elif check_pre_processing == Classification.Detected:
             return True
         # ------ This code will run if the path is in the forbidden list ------ #
-        req_path = parsed_data["path"].strip("/")
-        client_ip = parsed_data["client_ip"]
-        last_request, counter = self._get_previous_request_info(client_ip, req_path)
+        req_path = parsed_data.path.strip("/")
+        client_ip = parsed_data.from_ip
+        bf_item = self._get_previous_request_info(client_ip, req_path, parsed_data.host_name)
+        last_request, counter = bf_item.time_stamp, bf_item.counter
         # Sensitivity will determinate the max_counter.
         if sensitivity == Sensitivity.Regular:
-            max_counter = 10  # TODO: discuss about the const numbers.
+            max_counter = self.kb["sensitivity"][str(Sensitivity.Regular.value)]  # TODO: discuss about the const numbers.
         elif sensitivity == Sensitivity.Sensitive:
-            max_counter = 5
+            max_counter = self.kb["sensitivity"][str(Sensitivity.Sensitive.value)]
         elif sensitivity == Sensitivity.VerySensitive:
-            max_counter = 3
+            max_counter = self.kb["sensitivity"][str(Sensitivity.VerySensitive.value)]
         else:
-            max_counter = 3
+            max_counter = self.kb["sensitivity"]["else"]
         # Check if the last request was more that 1min ago
-        if time.time() - last_request > 60:  # TODO: discuss about the const 1min.
-            self._data_map[client_ip][req_path] = (time.time(), 1)
-            return False
+        bf_item.counter += 1
+        bf_item.time_stamp = time.time()
+        if time.time() - last_request > self.kb["time_interval_in_sec"]:  # TODO: discuss about the const 1min.
+            bf_item.counter = 0
         elif counter >= max_counter:
-            self._data_map[client_ip][req_path] = (time.time(), counter + 1)
+            db.commit()
             return True
         # --- The counter is < max_counter --- #
-        self._data_map[client_ip][req_path] = (time.time(), counter + 1)
+        db.commit()
         return False
 
-    def _get_previous_request_info(self, ip, path):
-        if ip not in self._data_map:
-            return time.time(), 0
-        elif path not in self._data_map[ip]:
-            return time.time(), 0
-        else:
-            return self._data_map[ip][path]
+    def _get_previous_request_info(self, ip, path, dns_name):
+        brute_force_data = db.get_session().query(BruteForceDataItem).filter_by(ip=ip, path=path, dns_name=dns_name).first()
+        if brute_force_data is None:
+            brute_force_data = BruteForceDataItem(ip=ip, dns_name=dns_name, path=path, counter=0, time_stamp=time.time())
+            db.insert(brute_force_data)
+        return brute_force_data
 
     def _is_forbidden(self, forbidden, parsed_data):
         """
@@ -68,8 +68,7 @@ class BruteForce(Detector):
         :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return: Classification Enum
         """
-        req_ip = parsed_data["client_ip"]
-        for req_ip in forbidden:
+        for parsed_data.from_ip in forbidden:
             return Classification.Detected
         return Classification.NoConclusion
 
@@ -82,13 +81,17 @@ class BruteForce(Detector):
         :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return: Classification Enum
         """
-        req_path = parsed_data["path"].strip("/")
-        req_ip = parsed_data["client_ip"]
-        request_data = "{}<=>{}".format(req_ip, req_path)
+        req_path = parsed_data.path.strip("/")
+        request_data = "{}<=>{}".format(parsed_data.from_ip, req_path)
         if request_data in legitimate:
             return Classification.Clean
         # For case that the ip has access for all the server path its will be ip only.
-        if req_ip in legitimate:
+        request_data = "{}<=>{}".format(parsed_data.from_ip, "*")
+        if request_data in legitimate:
+            return Classification.Clean
+        # For case that the path has access for all clients ips its will be path only.
+        request_data = "{}<=>{}".format("*", req_path)
+        if request_data in legitimate:
             return Classification.Clean
         return Classification.NoConclusion
 
@@ -96,5 +99,4 @@ class BruteForce(Detector):
         return self._forbidden
 
     def refresh(self):
-        # TODO: implement the refresh data from Database.
-        return None
+        pass

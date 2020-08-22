@@ -1,63 +1,82 @@
-import os
-
 import requests
-from flask import Flask, request, Response, session
-from flask_session import Session  # new style
-# from flask.ext.session import Session  # old style
+from flask import Flask, request, Response, abort
+from werkzeug.routing import Rule
+
+from Controllers.elro_controller import ElroController
+from Knowledge_Base import log, to_json
+from Knowledge_Base.enums.controller_enums import ControllerResponseCode
+from Detectors import SQLDetector, BruteForce, BotsDetector, XSSDetector, XMLDetector
+from Detectors.csrf import CSRF
+from Knowledge_Base.enums.logs_enums import LogLevel
+from Parser.parser import FlaskHTTPRequestParser, HTTPResponseParser
 
 app = Flask(__name__)
-# sess = Session()
+app.url_map.add(Rule('/', endpoint='proxy', defaults={'path': ""}))
+app.url_map.add(Rule('/<path:path>', endpoint='proxy'))
+
+# The available detectors for the Controller
+detectors = {
+    # "sql_detector": SQLDetector,
+    "xss_detector": XSSDetector,
+    "xml_detector": XMLDetector,
+    "csrf_detector": CSRF,
+    "bruteforce_detector": BruteForce,
+    "bots_detector": BotsDetector,
+}
 
 
-
-@app.route('/', methods=['POST', 'GET'])
-def index():
-    response = None
-    if request.method=='GET':
-        print("GET")
-        # if session.get('key', 'not-set') != "value":
-        #     return "Cheater"
-        # session['key'] = "value"
-        print(request.headers)
-        resp = requests.get(f'{"http://www.eliranm.co"}')
+def request_handler():
+    log("Start parsing the request", LogLevel.INFO, request_handler)
+    parser = FlaskHTTPRequestParser()
+    parsed_request = parser.parse(request)
+    log("Creating Controller", LogLevel.INFO, request_handler)
+    log("The Controller Detectors are {}".format(detectors), LogLevel.DEBUG, request_handler)
+    controller = ElroController(detectors=detectors)
+    log("Activating controller request handler", LogLevel.INFO, request_handler)
+    response_code, send_to, new_request, parsed_request = controller.request_handler(parsed_request, request)
+    log("Controller response is: {} {}".format(response_code, send_to), LogLevel.DEBUG, request_handler)
+    url = 'https://{}{}?{}'.format(parsed_request.host_name, parsed_request.path, parsed_request.query)
+    if response_code == ControllerResponseCode.NotValid:
+        log("The Request for {} is not valid.".format(request.url), LogLevel.INFO, request_handler)
+        log("Redirecting to {}".format(url), LogLevel.INFO, request_handler)
+        response = Response(status=302, headers={"Location": url})
+    elif response_code == ControllerResponseCode.Valid:
+        log("The Request for {} valid and OK".format(request.url), LogLevel.INFO, request_handler)
+        resp = requests.request(
+            method=parsed_request.method, url=url, verify=False
+        )
+        log("The Response is {}".format(to_json(resp)), LogLevel.DEBUG, request_handler)
+        parser = HTTPResponseParser(parsed_request)
+        log("Parse the response", LogLevel.INFO, request_handler)
+        parsed_response = parser.parse(resp)
+        log("Activating controller response handler", LogLevel.INFO, request_handler)
+        response_code, send_to, new_content = controller.response_handler(parsed_response, resp)
+        log("Controller response is: {} {}".format(response_code, send_to), LogLevel.DEBUG, request_handler)
+        if response_code == ControllerResponseCode.NotValid:
+            send_content = new_content
+        else:
+            send_content = resp.content
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        headers = [(name, value) for (name, value) in     resp.raw.headers.items() if name.lower() not in excluded_headers]
-        response = Response(resp.content, resp.status_code, headers)
-        # print(response.headers)
+        headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
+        log("Generating response...", LogLevel.INFO, request_handler)
+        response = Response(send_content, resp.status_code, headers)
     else:
-        print("Post")
-        print(request.headers)
-        resp = requests.get(f'{"http://www.eliranm.co"}')
-        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        headers = [(name, value) for (name, value) in     resp.raw.headers.items() if name.lower() not in excluded_headers]
-        response = Response(resp.content, resp.status_code, headers)
-        # print(response.headers)
+        log("The Request for {} is not found in the database".format(request.url), LogLevel.INFO, request_handler)
+        response = Response(status=404)
+        abort(404)  # Abort the request.
+    log("Sending response", LogLevel.INFO, request_handler)
     return response
 
 
-@app.route('/<path:path>')
+@app.endpoint('proxy')
 def proxy(path):
-    response = None
-    if request.method=='GET':
-        print(request.headers)
-        resp = requests.get(f'{"http://www.eliranm.co/"}{path}')
-        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        headers = [(name, value) for (name, value) in     resp.raw.headers.items() if name.lower() not in excluded_headers]
-        response = Response(resp.content, resp.status_code, headers)
-        # print(response.headers)
-    else:
-        resp = requests.get(f'{"http://www.eliranm.co/"}{path}')
-        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        headers = [(name, value) for (name, value) in     resp.raw.headers.items() if name.lower() not in excluded_headers]
-        response = Response(resp.content, resp.status_code, headers)
-        # print(response.headers)
-    return response
+    log("Request has arrived: {} From {}".format(request.url, request.remote_addr), LogLevel.INFO, request_handler)
+    return request_handler()
 
 
 if __name__ == '__main__':
     app.secret_key = 'super secret key'
     app.config['SECRET_KEY'] = 'super secret key'
     # sess.init_app(app)
-    app.config['SESSION_TYPE'] = 'filesystem'
     app.debug = True
     app.run(port=80)

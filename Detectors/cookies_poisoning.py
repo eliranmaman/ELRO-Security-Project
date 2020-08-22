@@ -1,20 +1,20 @@
 import re
 
-from Detectors import Detector, Sensitivity, Classification
-from config import cookies_map
-
-# TODO: tests
+from DBAgent import CookiesToken
+from Detectors import Detector
+from Knowledge_Base import Sensitivity, Classification
+from config import db
 
 
 class CookiesPoisoning(Detector):
 
-    def generate_key(self, client_addr, url):
-        return "{}<=>{}".format(client_addr, url).lower()
+    def __init__(self):
+        super().__init__()
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: The path's that forbidden in any case for cross-site (list)
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
@@ -34,15 +34,18 @@ class CookiesPoisoning(Detector):
         :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return:
         """
-        cookies = parsed_data["headers"].get('Cookie', None)
+        cookies = parsed_data.headers.get("Cookie", None)
         if cookies is None:
             return False
-        m = re.match(".*?Elro-Sec-Token=.*\"(.*?)@Elro-Sec-End", cookies)
+        cookies_token = db.get_session().query(CookiesToken).\
+            filter_by(active=True, ip=parsed_data.from_ip, dns_name=parsed_data.host_name).first()
+        if cookies_token is None:
+            return True
+        m = re.match(self.kb["token_regex"], cookies)
         if m is None:
             return True
         secret_value = m.group(1)
-        key = self.generate_key(parsed_data["client_ip"], parsed_data["headers"].get('Host', "elro-sec.com"))
-        check = cookies_map.get(key, None) != "{}@Elro-Sec-End".format(secret_value)  # TODO: this is not readable.
+        check = secret_value != cookies_token.token
         return check
 
     def _is_legitimate(self, legitimate, parsed_data):
@@ -53,7 +56,7 @@ class CookiesPoisoning(Detector):
         :param parsed_data: Parsed Data (from the parser module) of the request / response
         :return: Classification Enum
         """
-        req_ip = parsed_data["client_ip"]
+        req_ip = parsed_data.from_ip
         if req_ip in legitimate:
             return Classification.Clean
         return Classification.NoConclusion

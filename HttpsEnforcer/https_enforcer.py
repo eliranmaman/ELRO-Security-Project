@@ -1,7 +1,5 @@
-import time
-
 from requests import Response
-import requests
+
 
 class HTTPSEnforcer(object):
 

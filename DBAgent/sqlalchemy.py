@@ -2,57 +2,16 @@
 Crypto issue: https://github.com/openthread/openthread/issues/1137
 Varname: https://github.com/pwwang/python-varname
 """
-import base64
 import json
 from functools import wraps
-from Crypto.Cipher import AES
-from Crypto.Hash import SHA256
-from Crypto import Random
+from http.client import HTTPMessage
+
 from cryptography.fernet import Fernet
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from DBAgent import DBHandler
-
-enc_list = ["content", "headers", "cookies", "password"]
-enc_key = b'tkBV4rY7gcEoWmpvqHZTvXExvuh8YsfhcdFUdBPzXeU='
-
-
-def encrypt_data(value):
-    cipher_suite = Fernet(enc_key)
-    cipher_text = cipher_suite.encrypt(value.encode('utf-8'))
-    return cipher_text.decode('utf-8')
-
-
-def decrypt_data(value):
-    value = value.encode('utf-8')
-    cipher_suite = Fernet(enc_key)
-    plain_text = cipher_suite.decrypt(value)
-    return plain_text.decode('utf-8')
-
-
-def encrypt_item(func):
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        for var in args:
-            for attr, value in var.__dict__.items():
-                if attr in enc_list:
-                    var.__dict__[attr] = encrypt_data(value)
-            func(self, *args, **kwargs)
-    return wrapper
-
-
-def decrypt_item(func):
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        item = func(self, *args, **kwargs)
-        for attr, value in item.__dict__.items():
-            if attr in enc_list:
-                print(attr, value)
-                item.__dict__[attr] = decrypt_data(value)
-        return item
-    return wrapper
 
 
 class SQLAlchemy(DBHandler):
@@ -99,17 +58,17 @@ class SQLAlchemy(DBHandler):
             return
         self._session.commit()
 
-    @encrypt_item
     def add(self, item):
         self._session.add(item)
 
-    @encrypt_item
     def insert(self, item):
         if self._session is None:
             return False
+        for attr, value in item.__dict__.items():
+            if type(value) is HTTPMessage:
+                item.__dict__[attr] = value.as_string()
         self._session.add(item)
         self.commit()
 
-    @decrypt_item
     def decrypt(self, item):
         return item

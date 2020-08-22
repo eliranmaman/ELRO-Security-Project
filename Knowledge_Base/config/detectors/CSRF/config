@@ -1,0 +1,11 @@
+{
+  "name": "csrf_detector",
+  "relevant_header": "Sec-Fetch-Site",
+  "same_origin": "same-origin",
+  "sensitivity": {
+    "1": [],
+    "2": ["GET"],
+    "3": ["POST", "DELETE", "PUT"],
+    "else": []
+  }
+}

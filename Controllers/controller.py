@@ -1,29 +1,36 @@
+import json
+
+from config import controller_config_path
 
 
 class Controller(object):
 
-    def __init__(self, parser, detectors):
-        self._parser = None  # will work on the same threads.
-        self._detectors = dict()  # dict of detectors available for the Controller.
+    def __init__(self, detectors):
+        self._detectors = detectors  # dict of detectors available for the Controller.
         self._db = None  # will hold the Database connection.
-        raise NotImplementedError()
+        self.kb_path = "{}/{}/config".format(controller_config_path, self.__class__.__name__)
+        self.kb = dict()
+        self.load_knowledge_base()
 
-    def activate(self, request):
+    def request_handler(self, request, original_request):
         """
         This function will handler all the system logic. Including activate the parser, detectors, etc.
+        :param original_request:
         :param request: The request that arrived from the Proxy.
         :return: HTTP response
         """
         raise NotImplementedError()
 
-    def _parse(self):
+    def response_handler(self, request, original_response):
         """
-        This function will be responsible to activate the parser.
-        :return: dict, with the parsed data.
+        This function will handler all the system logic. Including activate the parser, detectors, etc.
+        :param original_response:
+        :param request: The request that arrived from the Proxy.
+        :return: HTTP response
         """
         raise NotImplementedError()
 
-    def _is_authorized(self, server_ip, requester_ip):
+    def _is_authorized(self, requester_ip):
         """
         This function will check if the request is authorized in terms of:
             1) The requester isn't in the server black list.
@@ -52,15 +59,10 @@ class Controller(object):
         """
         raise NotImplementedError()
 
-    def _run_query(self, query):
-        """
-        This function will update the DB with new information (e.g: response detectors data)
-        :param update: Will hold a string of the query
-        :return: None
-        """
-        cursor = self._db.get_cursor()
-        try:
-            cursor.execute(query)
-        finally:
-            self._db.commit()
-            cursor.close()
+    def load_knowledge_base(self):
+        with open(self.kb_path, "r", encoding="utf-8") as kb_file:
+            kb_data = json.load(kb_file)
+            self.kb.update(kb_data)
+        with open("{}/controller".format(controller_config_path), "r", encoding="utf-8") as kb_file:
+            kb_data = json.load(kb_file)
+            self.kb.update(kb_data)
