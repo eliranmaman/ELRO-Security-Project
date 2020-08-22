@@ -111,7 +111,7 @@ class ElroController(Controller):
                 self.response_cookie = CookiesToken(dns_name=parsed_request.host_name, ip=parsed_request.from_ip,
                                                     active=True, token=secrets.token_hex(256))
             elif validate:
-                log("Detector {} is detected unusual activity".format(detector.name), LogLevel.INFO, self.request_handler)
+                log(" ************* Detector {} is detected unusual activity for {} ************".format(detector.name, original_request.url), LogLevel.INFO, self.request_handler)
                 self._request_data.detected = detector.name
                 log("Insert Information to database".format(detector.name), LogLevel.DEBUG, self.request_handler)
                 db.insert(self._request_data)
