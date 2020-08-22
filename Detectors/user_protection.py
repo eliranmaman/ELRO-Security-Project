@@ -1,36 +1,22 @@
-"""
-TODO: Information, Tests.
-"""
+import json
 import logging
 import math
 import re
 from functools import wraps
 from urllib.parse import urlparse
 
-from config import bit_map, url_regex, bit_map_errors, log_dict
-
-map_bit = bit_map
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-file_handler = logging.FileHandler(log_dict + "/user_protection.log", 'a+')
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
+from config import detectors_config_path, url_regex
 
 
 def invoke_detector(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         logging.info("Invoking: " + func.__name__)
-        if is_on(map_bit[func.__name__], self.bit_indicator):
+        if is_on(self.map_bit[func.__name__], self.bit_indicator):
             is_detected = func(self, *args, **kwargs)
             if is_detected:
-                self._UserProtectionResults.bit_map |= map_bit[func.__name__]
-                self._UserProtectionResults.detected_alerts.append(bit_map_errors[map_bit[func.__name__]])
+                self._UserProtectionResults.bit_map |= self.map_bit[func.__name__]
+                self._UserProtectionResults.detected_alerts.append(self.kb["bit_map_errors"][str(self.map_bit[func.__name__])])
     return wrapper
 
 
@@ -41,7 +27,6 @@ class UserProtectionResults(object):
         self.csrf_urls = []
         self.csrf_js_files = False
         self.detected_alerts = []
-        self.name = "user_protection"
 
 
 def is_on(index, bit):
@@ -59,9 +44,14 @@ class UserProtectionDetector(object):
         """
         :param response: The original Response
         """
+        self.kb_path = "{}/{}/config".format(detectors_config_path, self.__class__.__name__)
+        self.kb = dict()
+        self.load_knowledge_base()
         self._UserProtectionResults = UserProtectionResults()
         self._response = response
         self.bit_indicator = 0
+        self.map_bit = self.kb["bit_map"]
+        self.name = self.kb["name"]
 
     def detect(self, bit_indicator):
         """
@@ -69,17 +59,11 @@ class UserProtectionDetector(object):
         :return: UserProtectionResults Object.
         """
         self.bit_indicator = bit_indicator
-        print("{0:b}".format(bit_indicator))
         self.__detect_csrf_requests()
         self.__detect_script_files()
         self.__access_cookies()
         self.__iframe()
         self.__detect_inline_scripts()
-        logger.info("user_protection result object contains::--> \n "
-                    + "urls: " + " ".join([str(url) for url in self._UserProtectionResults.csrf_urls]) + "\n"
-                    + "alerts: " + " ".join([str(alert) for alert in self._UserProtectionResults.detected_alerts]) + "\n"
-                    + "bit_map: " + str(self._UserProtectionResults.bit_map) + "\n"
-                    + "csrf_js_files: " + str(self._UserProtectionResults.csrf_js_files))
         return self._UserProtectionResults
 
     @invoke_detector
@@ -88,7 +72,7 @@ class UserProtectionDetector(object):
         This method is looking for inline scripts in the page.
         :return: Boolean
         """
-        return self._response.text.find("<script") > 0
+        return self._response.text.find(self.kb["__detect_inline_scripts"]) > 0
 
     @invoke_detector
     def __detect_script_files(self):
@@ -98,9 +82,14 @@ class UserProtectionDetector(object):
         "__detect_csrf_requests"
         :return: Boolean
         """
-        return self._response.headers.get('Content-Type', "").find(
-            "javascript") > 0 or self._UserProtectionResults.csrf_js_files or self._response.text.find(".js\"") > 0 \
-            or self._response.text.find("<script src=\"") > 0 or self._response.text.find("\"></script>") > 0
+        is_detected = self._UserProtectionResults.csrf_js_files or \
+                      self._response.headers.get(self.kb["__detect_script_files"]["headers"], "").find("javascript") > 0
+        if is_detected:
+            return True
+        for detect in self.kb["__detect_script_files"]["list"]:
+            if self._response.text.find(detect) > 0:
+                return True
+        return False
 
     @invoke_detector
     def __access_cookies(self):
@@ -108,7 +97,10 @@ class UserProtectionDetector(object):
         This method will try to detect attempt to access the user cookies via the DOM
         :return: Boolean
         """
-        return self._response.text.find("document.cookie") > 0 or self._response.text.find("browser.cookie") > 0
+        for detect in self.kb["__access_cookies"]:
+            if self._response.text.find(detect) > 0:
+                return True
+        return False
 
     @invoke_detector
     def __iframe(self):
@@ -117,7 +109,10 @@ class UserProtectionDetector(object):
         This method has high value of False Positive.
         :return: Boolean
         """
-        return self._response.text.find("iframe") > 0
+        for detect in self.kb["__iframe"]:
+            if self._response.text.find(detect) > 0:
+                return True
+        return False
 
     @invoke_detector
     def __detect_csrf_requests(self):
@@ -139,3 +134,8 @@ class UserProtectionDetector(object):
             if response_url != host_uri:
                 self._UserProtectionResults.csrf_urls.append((host_uri, url))
         return len(self._UserProtectionResults.csrf_urls) > 0
+
+    def load_knowledge_base(self):
+        with open(self.kb_path, "r", encoding="utf-8") as kb_file:
+            kb_data = json.load(kb_file)
+            self.kb.update(kb_data)
