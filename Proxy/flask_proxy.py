@@ -1,5 +1,6 @@
 import requests
 from flask import Flask, request, Response, abort
+from werkzeug.routing import Rule
 
 from Controllers.elro_controller import ElroController
 from Knowledge_Base.enums.controller_enums import ControllerResponseCode
@@ -8,6 +9,7 @@ from Detectors.csrf import CSRF
 from Parser.parser import FlaskHTTPRequestParser, HTTPResponseParser
 
 app = Flask(__name__)
+app.url_map.add(Rule('/', endpoint='proxy'))
 
 # The available detectors for the Controller
 detectors = {
@@ -60,8 +62,9 @@ def request_handler():
     return response
 
 
-@app.route('/', defaults={'path': ""}, methods=["GET", "POST"])
-@app.route('/<path:path>', methods=["GET", "POST"])
+@app.endpoint('proxy')
+@app.route('/', defaults={'path': ""})
+@app.route('/<path:path>')
 def proxy(path):
     print("0) Request Arrived (path: {})".format(path))
     return request_handler()
