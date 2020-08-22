@@ -43,7 +43,9 @@ def request_handler():
     elif response_code == ControllerResponseCode.Valid:
         log("The Request for {} valid and OK".format(request.url), LogLevel.INFO, request_handler)
         resp = requests.request(
-            method=parsed_request.method, url=url, verify=False
+            method=parsed_request.method, url=url, verify=True,
+            json=request.get_json()
+
         )
         log("The Response is {}".format(to_json(resp)), LogLevel.DEBUG, request_handler)
         parser = HTTPResponseParser(parsed_request)
