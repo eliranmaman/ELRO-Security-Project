@@ -1,24 +1,10 @@
-import logging
-
 from Detectors import Detector, Sensitivity, Classification
-from config import log_dict
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-file_handler = logging.FileHandler(log_dict + "/csrf_detector.log", 'a+')
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
 
 
 class CSRF(Detector):
 
     def __init__(self):
         super().__init__()
-        self.name = "csrf_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
@@ -28,7 +14,6 @@ class CSRF(Detector):
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
         """
-        logger.info("csrf_detector got parsed_data ::--> " + parsed_data)
         # Pre Processing
         check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Detected:
@@ -36,17 +21,17 @@ class CSRF(Detector):
         elif check_pre_processing == Classification.Clean:
             return False
         # Getting the request Type (e.g same-origin)
-        sec_fetch_site = parsed_data.headers.get('Sec-Fetch-Site', None)
+        sec_fetch_site = parsed_data.headers.get(self.kb["relevant_header"], None)
         # If the request is in the same-origin return False
-        if sec_fetch_site == "same-origin":  # TODO: check if the attacker can change this header
+        if sec_fetch_site == self.kb["same_origin"]:
             return False
         # Sensitivity policy
         method = parsed_data.method
         if sensitivity == Sensitivity.Regular:
-            if method == "POST" or method == "DELETE" or method == "PUT":
+            if method in self.kb["sensitivity"][str(Sensitivity.Regular.value)]:
                 return True
         elif sensitivity == Sensitivity.Sensitive:
-            if method != "GET":
+            if method not in self.kb["sensitivity"][str(Sensitivity.Sensitive.value)]:
                 return True
         else:  # Sensitivity.VerySensitive
             return True
