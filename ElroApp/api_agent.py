@@ -1,25 +1,15 @@
 import json
-import logging
 import requests
 from flask import Flask, request
 from flask_restful import Resource, Api
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from DBAgent.orm import Users, Services, Server
-from Detectors.user_protection import UserProtectionDetector
-from config import db, log_dict
+from Detectors import UserProtectionDetector
+from Knowledge_Base import log, to_json, LogLevel
+from config import db
 
 app = Flask(__name__)
 api = Api(app)
-
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
-#
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#
-# file_handler = logging.FileHandler(log_dict + "/api_agent.log", 'a+')
-# file_handler.setFormatter(formatter)
-#
-# logger.addHandler(file_handler)
 
 
 class LoginHandler(Resource):
@@ -31,10 +21,10 @@ class LoginHandler(Resource):
 
         if password == incoming_json['password']:
             if decrypted_stored_user.is_admin == 1:
-                print("Admin login has occurred: => " + incoming_json['email'])
+                log("[API][LoginHandler] Admin login has occurred: {}".format(incoming_json['email']), LogLevel.INFO)
                 return 2
             return 1
-        print("Login Failure has occurred: IP=>"+ request.remote_addr + incoming_json['email'])
+        log("[API][LoginHandler] Login Failure has occurred:: {} {}".format(request.remote_addr, incoming_json['email']), LogLevel.INFO, self.post)
         return 0
 
 
@@ -61,7 +51,7 @@ class RegisterHandler(Resource):
 
     def post(self):
         incoming_json = request.get_json()
-        print("*** Registering new Client ***" + incoming_json['users']['email'])
+        log("[API][RegisterHandler] Registering new Client: {}".format(incoming_json['users']['email']), LogLevel.INFO, self.post)
         user = Users(email=incoming_json['users']['email'], password=incoming_json['users']['password'])
         db.insert(user)
         user_id = user.item_id
@@ -75,14 +65,14 @@ class RegisterHandler(Resource):
             db.insert(user_services)
             return 1
         except Exception as e:
-            print("Error when registering new client, Error: ", e)
+            log("[API][RegisterHandler] Error when registering new client, Error: {}".format(e),
+                LogLevel.ERROR, self.post)
             return 0
 
 
 def serialize_sets(obj):
     if isinstance(obj, set):
         return list(obj)
-
     return obj
 
 
@@ -122,18 +112,8 @@ class GetActiveServicesHandler(Resource):
             return joined_statuses
 
         except Exception as e:
-            print("error on GetActiveServicesHandler", e)
+            log("[API][GetActiveServicesHandler] Exception: {}".format(e), LogLevel.ERROR, self.post)
             return False
-
-
-def to_json(item):
-    json_data = dict()
-    for attr, value in item.__dict__.items():
-        if "_sa_instance_state" in attr:
-            continue
-        json_data[attr] = str(value)
-
-    return json_data
 
 
 class GetUsersDataHandler(Resource):
@@ -143,7 +123,7 @@ class GetUsersDataHandler(Resource):
         all_services = db.get_session().query(Services).all()
         joined_objects = []
         for user in all_users:
-            current_object = to_json(user)
+            current_object = to_json(user, to_str=True)
             del current_object["password"]
             for server in all_servers:
                 if server.user_id == user.item_id:
@@ -152,41 +132,37 @@ class GetUsersDataHandler(Resource):
                         if service.server_id == server.item_id:
                             current_object = {**current_object, **to_json(service)}
                             joined_objects.append(current_object)
-        print(joined_objects)
+        log("[API][GetUsersDataHandler] joined_objects: {}".format(joined_objects), LogLevel.DEBUG, self.post)
 
         return joined_objects
 
 
 class GetCustomersStatisticsHandler(Resource):
     def post(self):
-        return {'bye': 'world'}
+        return {'bye': 'world'}  # TODO: Royi do we realy need this?!
 
 
 class UpdateServiceStatusHandler(Resource):
     def post(self):
         incoming_json = request.get_json()
-        user_id = get_user_id_by_email(incoming_json['email'])
         server = db.get_session().query(Server).filter(Server.server_dns == incoming_json['website']).one()
-        services = db.get_session().query(Services).filter(Services.server_id == server.item_id).one()
         update_data = incoming_json['update_data']
         update_data_final = {k: 1 if v == 'True' else 0 for k, v in update_data.items()}
         sess = db.get_session()
         sess.query(Services).filter(Services.server_id == server.item_id).update(update_data_final)
         sess.commit()
         sess.close()
-
         return 1
 
 
 class AdminUpdateServiceStatusHandler(Resource):
     def post(self):
         incoming_json = request.get_json()
-        print("admin update**** ")
-        print(type(incoming_json['update_data']))
+        log("[API][AdminUpdateServiceStatusHandler] admin update: {}"
+            .format(type(incoming_json['update_data'])), LogLevel.DEBUG, self.post)
         update_data = incoming_json['update_data']
         sess = db.get_session()
         sess.query(Services).update(update_data)
-
         sess.commit()
         sess.close()
         return 1
@@ -207,7 +183,8 @@ class AddNewWebsiteHandler(Resource):
             db.insert(users_services)
             return 1
         except Exception as e:
-            print("Error when trying to add a new website: " + incoming_json['services']['website'], e)
+            log("[API][AddNewWebsiteHandler] Error when trying to add a new website: {} {}"
+                .format(incoming_json['services']['website'], e), LogLevel.ERROR, self.post)
             return 0
 
 
@@ -218,10 +195,11 @@ class UserProtectorHandler(Resource):
         host_to_detect = host_to_detect.replace("http://", "")
         host_to_detect = host_to_detect.replace("https://", "")
         host_to_detect = "https://"+host_to_detect
-        print("getting info with UserProtectionDetector for: " + host_to_detect)
+        log("[API][AdminUpdateServiceStatusHandler] getting info with UserProtectionDetector for: {}"
+            .format(host_to_detect), LogLevel.INFO, self.post)
         response = requests.get(host_to_detect)
         upc = UserProtectionDetector(response)
-        resp = upc.detect()
+        resp = upc.detect(255)
         return {"alerts": resp.security_alerts}
 
 
@@ -235,5 +213,3 @@ api.add_resource(AdminUpdateServiceStatusHandler, '/adminUpdateServiceStatus')
 api.add_resource(AddNewWebsiteHandler, '/addNewWebsite')
 api.add_resource(UserProtectorHandler, '/userProtector')
 
-if __name__ == '__main__':
-    app.run(debug=True)
