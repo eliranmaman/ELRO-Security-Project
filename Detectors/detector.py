@@ -1,14 +1,14 @@
 import json
 
 from Knowledge_Base import Sensitivity, Classification
-from config import config_path
+from config import detectors_config_path
 
 
 class Detector(object):
 
     def __init__(self):
         self._forbidden = []
-        self.kb_path = "{}/{}/config".format(config_path, self.__class__.__name__)
+        self.kb_path = "{}/{}/config".format(detectors_config_path, self.__class__.__name__)
         self.kb = dict()
         self.load_knowledge_base()
         self.name = self.kb["name"]
@@ -85,6 +85,6 @@ class Detector(object):
         with open(self.kb_path, "r", encoding="utf-8") as kb_file:
             kb_data = json.load(kb_file)
             self.kb.update(kb_data)
-        with open("{}/detector".format(config_path), "r", encoding="utf-8") as kb_file:
+        with open("{}/detector".format(detectors_config_path), "r", encoding="utf-8") as kb_file:
             kb_data = json.load(kb_file)
             self.kb.update(kb_data)

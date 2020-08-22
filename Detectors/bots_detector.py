@@ -1,30 +1,26 @@
-import logging
-import time
 import requests
 import json
 
 from Detectors import Detector, Sensitivity, Classification
-from config import BOT_KEY, BOTS_URL, log_dict
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-file_handler = logging.FileHandler(log_dict + "/bots_detector.log", 'a+')
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+#
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#
+# file_handler = logging.FileHandler(log_dict + "/bots_detector.log", 'a+')
+# file_handler.setFormatter(formatter)
+#
+# logger.addHandler(file_handler)
 
 
 class Bots(Detector):
 
     def __init__(self):
         super().__init__()
-        self._bots_url = "{}/user_agent_parse".format(BOTS_URL)
-        self._bots_header = {"X-API-KEY": BOT_KEY}
+        self._bots_url = "{}/user_agent_parse".format(self.kb["BOTS_URL"])
+        self._bots_header = {"X-API-KEY": self.kb["BOT_KEY"]}
         self._bots_data = {"parse_options": {}}
-        self.name = "bots_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
@@ -49,7 +45,7 @@ class Bots(Detector):
         user_agent_data = self.__parse_bots_data()
         is_detected = False
         # Start Check by the web sensitivity #
-        logger.info("Starting Check by the web sensitivity")
+        # logger.info("Starting Check by the web sensitivity")
         # ----- Regular ----- #
         is_detected = is_detected or user_agent_data["is_restricted"] or user_agent_data["is_abusive"]
         if sensitivity == Sensitivity.Regular or is_detected:
@@ -83,14 +79,7 @@ class Bots(Detector):
             return Classification.NoConclusion
         # ---- Parse the information ---- #
         bots_response = bots_response["parse"]
-        return {
-            "software_type": bots_response.get("software_type", None),
-            "hardware_type": bots_response.get("hardware_type", None),
-            "is_weird": bots_response.get("is_weird", False),
-            "is_restricted": bots_response.get("is_restricted", False),
-            "is_spam": bots_response.get("is_spam", False),
-            "is_abusive": bots_response.get("is_abusive", False)
-        }
+        return {key: bots_response.get(key, value) for key, value in self.kb["bots_detectors"]}
 
     def _is_legitimate(self, legitimate, parsed_data):
         """

@@ -1,4 +1,5 @@
 {
+  "name": "xss_detector",
   "forbidden": ["<SCRIPT",
                 "\"JAVASCRIPT:",
                 "\"JAV&#X0D;ASCRIPT:",
