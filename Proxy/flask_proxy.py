@@ -11,8 +11,8 @@ app = Flask(__name__)
 
 detectors = {
     # "sql_detector": SQLDetector,
-    # "xss_detector": XSSDetector,
-    # "xml_detector": XMLDetector,
+    "xss_detector": XSSDetector,
+    "xml_detector": XMLDetector,
     "csrf_detector": CSRF,
     "bruteforce_detector": BruteForce,
     "b"
@@ -53,6 +53,7 @@ def reqest_handler():
         headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
         response = Response(send_content, resp.status_code, headers)
     else:
+        print("4) Not Found")
         response = Response(status=404)
         abort(404)  # Abort the request.
     print("7) Send Response")
