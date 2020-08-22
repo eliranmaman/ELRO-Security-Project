@@ -1,20 +1,20 @@
 import json
-import sys
+import re
 
 from Detectors import Detector, Sensitivity
-from config import data_path, log_dict
-import re
-import logging
+from Detectors.sql_injection_detector import create_content_as_str
+from config import data_path, config_path
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-file_handler = logging.FileHandler(log_dict + "/xss_injection.log", 'a+')
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+#
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#
+# file_handler = logging.FileHandler(log_dict + "/xss_injection.log", 'a+')
+# file_handler.setFormatter(formatter)
+#
+# logger.addHandler(file_handler)
 
 
 class XSSDetector(Detector):
@@ -23,6 +23,8 @@ class XSSDetector(Detector):
 
     def __init__(self):
         super().__init__()
+        self.kb_path = "{}/{}/config".format(config_path, self.__class__.__name__)
+        self.load_knowledge_base()
         self.__forbidden = list()
         self.refresh()
         self.name = "xss_detector"
@@ -37,8 +39,9 @@ class XSSDetector(Detector):
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data = str(parsed_data).upper()
-        logger.info("xss_injection got parsed_data ::--> " + parsed_data)
+        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
+        parsed_data_as_str += create_content_as_str(parsed_data)
+        # logger.info("xss_injection got parsed_data ::--> " + parsed_data)
         forbidden_word_list = []
         if forbidden is not None:
             self.__forbidden += forbidden
@@ -48,12 +51,11 @@ class XSSDetector(Detector):
         for forbidden_word in self.__forbidden:
             try:
                 forbidden_words = re.findall(forbidden_word, parsed_data)
+                if len(forbidden_words) > 0:
+                    # logger.info("Found Threat of XSS ATTACK, Forbidden regex: " + forbidden_word + " was found in: " + parsed_data)
+                    forbidden_word_list.append(forbidden_words)
             except Exception as e:
-                logger.exception("Exception with " + forbidden_word)
-            if len(forbidden_words) > 0:
-                logger.info("Found Threat of XSS ATTACK, Forbidden regex: " + forbidden_word + " was found in: " + parsed_data)
-                forbidden_word_list.append(forbidden_words)
-
+                pass
         # if detected a forbidden word it is probably an attack
         if len(forbidden_word_list) > 0:
             return True
@@ -65,12 +67,11 @@ class XSSDetector(Detector):
 
     # loads the external data
     def refresh(self):
-        try:
-            with open(self.__Forbidden_FILE, "r", encoding="utf-8") as data_file:
-                data = json.load(data_file)
-                for i in data['forbidden']:
-                    self.__forbidden.append(i)
-            data_file.close()
-        except Exception as e:
-            logger.exception(e)
+        """
+        Make an union of the list lists, (refreshing the data)
+        This be done efficiently by using both the set() and union() function.
+        This also takes care of the repetition and prevents them.
+        :return: None
+        """
+        self.__forbidden = list(set(self.__forbidden) | set(self.kb["forbidden"]))
 

@@ -1,19 +1,7 @@
-import enum
+import json
 
-# TODO: check if the legit or the forbidden need to run first in the _pre_processing method. (another reason is the
-#       is the fact that forbidden word can be legit.
-
-
-class Sensitivity(enum.Enum):
-    VerySensitive = 0.1
-    Sensitive = 0.2
-    Regular = 0.3
-
-
-class Classification(enum.Enum):
-    Detected = 1
-    Clean = 2
-    NoConclusion = 3
+from Knowledge_Base import Sensitivity, Classification
+from config import config_path
 
 
 class Detector(object):
@@ -21,6 +9,9 @@ class Detector(object):
     def __init__(self):
         self._forbidden = []
         self.name = None
+        self.kb_path = "{}/{}".format(config_path, self.__class__.__name__.lower())
+        self.kb = dict()
+        self.load_knowledge_base()
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
@@ -89,3 +80,8 @@ class Detector(object):
         :return: Classification (Enum)
         """
         return Classification.NoConclusion
+
+    def load_knowledge_base(self):
+        with open(self.kb_path, "r", encoding="utf-8") as kb_file:
+            kb_data = json.load(kb_file)
+            self.kb.update(kb_data)

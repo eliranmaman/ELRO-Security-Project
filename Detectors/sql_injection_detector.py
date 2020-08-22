@@ -1,33 +1,28 @@
-import json
-import logging
-
-from Detectors import Detector, Sensitivity
-from config import data_path, log_dict
 import re
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+from Detectors import Detector
+from Knowledge_Base import Sensitivity
+from config import config_path
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-file_handler = logging.FileHandler(log_dict + "/sql_injection.log")
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
+def create_content_as_str(content):
+    my_str = ""
+    for item, val in content.__dict__.items():
+        my_str += "{}:{} ".format(item, val)
+    return my_str.upper()
 
 
 class SqlInjection(Detector):
     """ this class will detect SQL injections attempts in a given parsed request/response """
-    __Forbidden_FILE = data_path+"/Detectors/SQLInjection/forbidden.json"
-    __Validation_FILE = data_path+"/Detectors/SQLInjection/validation.json"
-    __SQL_THRESHOLD = 0.5
 
     def __init__(self):
         super().__init__()
+        self.kb_path = "{}/{}/config".format(config_path, self.__class__.__name__)
+        self.load_knowledge_base()
         self.__forbidden = list()
         self.__break_characters = list()
         self.refresh()
-        self.name = "sql_detector"
+        self.name = self.kb["name"]
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
@@ -40,8 +35,8 @@ class SqlInjection(Detector):
          :return: boolean
 
         """
-        parsed_data = str(parsed_data).upper()
-        logger.info("sql_injections got parsed_data ::--> " + parsed_data)
+        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
+        parsed_data_as_str += create_content_as_str(parsed_data)
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
@@ -52,27 +47,27 @@ class SqlInjection(Detector):
 
         # check for context break intentions
         for break_char in self.__break_characters:
-            context_breaks = re.findall(break_char, parsed_data)
+            context_breaks = re.findall(break_char, parsed_data_as_str)
             if len(context_breaks) > 0:
-                logger.info("Found Threat of SQL INJECTION ATTACK, "
-                            "CONTEXT BREAK CHAR: " + break_char + " was found in: " + parsed_data)
+                # logger.info("Found Threat of SQL INJECTION ATTACK, "
+                #             "CONTEXT BREAK CHAR: " + break_char + " was found in: " + parsed_data)
                 context_break_list.append(context_breaks)
                 if sensitivity == Sensitivity.Sensitive:
-                    final_decision_assurance = self.final_validation(parsed_data)
-                    return True if final_decision_assurance >= self.__SQL_THRESHOLD else False
+                    final_decision_assurance = self.final_validation(parsed_data_as_str)
+                    return True if final_decision_assurance >= self.kb["threshold"] else False
 
         # check for forbidden words
         for forbidden_word in self.__forbidden:
-            forbidden_words = re.findall(forbidden_word, parsed_data)
+            forbidden_words = re.findall(forbidden_word, parsed_data_as_str)
             if len(forbidden_words) > 0:
-                logger.info("Found Threat of SQL INJECTION ATTACK, "
-                            "Forbidden word: " + forbidden_word + " was found in: " + parsed_data)
+                # logger.info("Found Threat of SQL INJECTION ATTACK, "
+                #             "Forbidden word: " + forbidden_word + " was found in: " + parsed_data)
                 forbidden_word_list.append(forbidden_words)
 
         # if tries to break context with forbidden words it is probably an attack
         if len(context_break_list) > 0 and len(forbidden_word_list) > 0:
-            final_decision_assurance = self.final_validation(parsed_data)
-            return True if final_decision_assurance >= self.__SQL_THRESHOLD else False
+            final_decision_assurance = self.final_validation(parsed_data_as_str)
+            return True if final_decision_assurance >= self.kb["threshold"] else False
         return False
 
     # returns the forbidden list
@@ -81,13 +76,14 @@ class SqlInjection(Detector):
 
     # loads the external data
     def refresh(self):
-        with open(self.__Forbidden_FILE, "r") as data_file:
-            data = json.load(data_file)
-            for i in data['forbidden']:
-                self.__forbidden.append(i)
-            for i in data['break_characters']:
-                self.__break_characters.append(i)
-        data_file.close()
+        """
+        Make an union of the list lists, (refreshing the data)
+        This be done efficiently by using both the set() and union() function.
+        This also takes care of the repetition and prevents them.
+        :return: None
+        """
+        self.__forbidden = list(set(self.__forbidden) | set(self.kb["forbidden"]))
+        self.__break_characters = list(set(self.__break_characters) | set(self.kb["break_characters"]))
 
     def final_validation(self, content, legitimate=None):
         """
@@ -98,20 +94,18 @@ class SqlInjection(Detector):
         :param legitimate - regex list of phrases that the client allow
         :return: double number - the percentage of sql injection certainty
         """
-        with open(self.__Validation_FILE, "r") as data_file:
-            data = json.load(data_file)
-            regex_list = data['regex_list']
-            content = str(content).upper()
-            threats_count = 0
+        regex_list = self.kb['regex_list']
+        content = content.upper() if type(content) is str else str(content).upper()
+        threats_count = 0
 
-            if legitimate is not None:
-                regex_list -= legitimate
+        if legitimate is not None:
+            regex_list -= legitimate
 
-            for regex_dict in regex_list:
-                matches = re.findall(regex_dict["phrase"], content)
-                if len(matches) > 0:
-                    logger.info("SQL VALIDATOR FOUND: " + " ".join([str(m) for m in matches]))
-                    threats_count += regex_dict["value"]
-            return threats_count
+        for regex_dict in regex_list:
+            matches = re.findall(regex_dict["phrase"], content)
+            if len(matches) > 0:
+                # logger.info("SQL VALIDATOR FOUND: " + " ".join([str(m) for m in matches]))
+                threats_count += regex_dict["value"]
+        return threats_count
 
 

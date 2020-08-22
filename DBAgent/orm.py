@@ -5,7 +5,6 @@ Tutorial: https://docs.sqlalchemy.org/en/13/orm/tutorial.html
 """
 import datetime
 import time
-
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Float
 
 from DBAgent.sqlalchemy import SQLAlchemy
@@ -17,7 +16,7 @@ def to_json(item, ignore_list=None):
     for attr, value in item.__dict__.items():
         if "_sa_instance_state" in attr or attr in ignore_list:
             continue
-        json_data[attr] = str(value)
+        json_data[attr] = value  #TODO: Why str(value)?
 
     return json_data
 
@@ -73,13 +72,13 @@ class Services(SQLAlchemy.Item):
     __tablename__ = "services"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     user_id = Column('user_id', Integer, ForeignKey("users.id"), nullable=False)
-    sql_detector = Column('sql_detector', Integer, nullable=False, default=True)
-    bots_detector = Column('bots_detector', Integer, nullable=False, default=True)
-    xss_detector = Column('xss_detector', Integer, nullable=False, default=True)
-    xml_detector = Column('xml_detector', Integer, nullable=False, default=True)
-    csrf_detector = Column('csrf_detector', Integer, nullable=False, default=True)
-    cookie_poisoning_detector = Column('cookie_poisoning_detector', Integer, nullable=False, default=True)
-    bruteforce_detector = Column('bruteforce_detector', Integer, nullable=False, default=True)
+    sql_detector = Column('sql_detector', Boolean, nullable=False, default=True)
+    bots_detector = Column('bots_detector', Boolean, nullable=False, default=True)
+    xss_detector = Column('xss_detector', Boolean, nullable=False, default=True)
+    xml_detector = Column('xml_detector', Boolean, nullable=False, default=True)
+    csrf_detector = Column('csrf_detector', Boolean, nullable=False, default=True)
+    cookie_poisoning_detector = Column('cookie_poisoning_detector', Boolean, nullable=False, default=True)
+    bruteforce_detector = Column('bruteforce_detector', Boolean, nullable=False, default=True)
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), unique=True, nullable=False)
     created_on = Column('created_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -132,9 +131,9 @@ class WhiteList(SQLAlchemy.Item):
 class DetectorRequestData(SQLAlchemy.Item):
     __tablename__ = "detectors_requests_data"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    detected = Column('detected', String(1000), nullable=False, default="none")
+    detected = Column('detected', String, nullable=False, default="none")
     to_server_id = Column('to_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    from_ip = Column('from_ip', String(1000), nullable=False)
+    from_ip = Column('from_ip', String, nullable=False)
 
     def __init__(self, item_id=None, detected=None, to_server_id=None, from_ip=None):
         self.item_id = item_id
@@ -148,9 +147,9 @@ class DetectorDataResponse(SQLAlchemy.Item):
     __tablename__ = "detectors_data_responses"
     item_id = Column('id', Integer, primary_key=True, unique=True)
     request_id = Column('request_id', Integer, ForeignKey("detectors_requests_data.id"), nullable=False)
-    detected = Column('detected', String(1000), nullable=False, default="none")
+    detected = Column('detected', String, nullable=False, default="none")
     from_server_id = Column('from_server_id', Integer, ForeignKey("servers.id"), nullable=False)
-    to_ip = Column('to_ip', String(1000), nullable=False)
+    to_ip = Column('to_ip', String, nullable=False)
 
     def __init__(self, item_id=None, request_id=None, detected=None, from_server_id=None, to_ip=None):
         self.item_id = item_id

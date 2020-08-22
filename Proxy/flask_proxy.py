@@ -2,7 +2,7 @@ import requests
 from flask import Flask, request, Response, abort
 
 from Controllers.elro_controller import ElroController
-from Data.enums.controller_enums import ControllerResponseCode
+from Knowledge_Base.enums.controller_enums import ControllerResponseCode
 from Detectors import SQLDetector, BruteForce, BotsDetector, XSSDetector, XMLDetector
 from Detectors.csrf import CSRF
 from Parser.parser import FlaskHTTPRequestParser, HTTPResponseParser

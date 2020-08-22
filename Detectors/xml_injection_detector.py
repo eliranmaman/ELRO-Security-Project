@@ -1,33 +1,34 @@
 import json
-import logging
-
-from Detectors import Detector, Sensitivity
-from config import data_path, log_dict
 import re
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-file_handler = logging.FileHandler(log_dict + "/xss_injection.log", 'a+')
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
+from Detectors import Sensitivity, Detector
+from Detectors.sql_injection_detector import create_content_as_str
+from config import data_path, config_path
+#
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+#
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#
+# file_handler = logging.FileHandler(log_dict + "/xss_injection.log", 'a+')
+# file_handler.setFormatter(formatter)
+#
+# logger.addHandler(file_handler)
 
 
 class XMLDetector(Detector):
     """this class will detect XML injections attempts in a given parsed request/response"""
-    __Forbidden_FILE = data_path+"/Detectors/XMLInjection/forbidden.json"
 
     # TODO: adjust usage with legitimate and forbidden list - will we receive regex ?
     #  or only words? (especially in the legit list) - need to think on solution
     def __init__(self):
         super().__init__()
+        self.kb_path = "{}/{}/config".format(config_path, self.__class__.__name__)
+        self.load_knowledge_base()
         self.__forbidden = list()
         self.__flag = list()
         self.refresh()
-        self.name = "xml_detector"
+        self.name = self.kb["name"]
 
     # if detected an attack attempt this method will return True and False otherwise
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
@@ -41,17 +42,18 @@ class XMLDetector(Detector):
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data = str(parsed_data).upper()
-        logger.info("xml_injection got parsed_data ::--> " + parsed_data)
+        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
+        parsed_data_as_str += create_content_as_str(parsed_data)
+        # logger.info("xml_injection got parsed_data ::--> " + parsed_data)
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
             self.__forbidden = list(filter(lambda x: x not in legitimate, self.__forbidden))
         for malicious_phrase in self.__forbidden:
-            matches = re.findall(malicious_phrase, parsed_data)
+            matches = re.findall(malicious_phrase, parsed_data_as_str)
             if len(matches) > 0:
-                logger.info("Found Threat of XML ATTACK, Forbidden regex: " + malicious_phrase + " was found in: "
-                            + parsed_data)
+                # logger.info("Found Threat of XML ATTACK, Forbidden regex: " + malicious_phrase + " was found in: "
+                #             + parsed_data)
                 return True
         return False
 
@@ -61,10 +63,11 @@ class XMLDetector(Detector):
 
     # loads the external data
     def refresh(self):
-        with open(self.__Forbidden_FILE, "r") as data_file:
-            data = json.load(data_file)
-            for i in data['forbidden']:
-                self.__forbidden.append(i)
-            for i in data['dangerous']:
-                self.__flag.append(i)
-        data_file.close()
+        """
+        Make an union of the list lists, (refreshing the data)
+        This be done efficiently by using both the set() and union() function.
+        This also takes care of the repetition and prevents them.
+        :return: None
+        """
+        self.__forbidden = list(set(self.__forbidden) | set(self.kb["forbidden"]))
+        self.__flag = list(set(self.__flag) | set(self.kb["dangerous"]))

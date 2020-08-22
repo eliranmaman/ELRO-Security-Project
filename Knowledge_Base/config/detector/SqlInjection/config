@@ -1,4 +1,38 @@
 {
+  "name": "sql_detector",
+  "threshold": 0.5,
+  "break_characters": [
+    "((\\%3D)|(=))[^\\n]*((\\%27)|(\\')|(\\-\\-)|(\\%3B)|(;))/i\n",
+    "\\w*((\\%27)|(\\'))((\\%6F)|o|(\\%4F))((\\%72)|r|(\\%52))/ix\n",
+    "(\\%27)|(\\')|(\\-\\-)|(\\\\)|(\\%5C)|(\\%23)|(#)/ix\n"
+    ],
+    "forbidden": [
+    "AND",
+    "OR",
+    "ALTER",
+    "TABLE",
+    "BETWEEN",
+    "CREATE",
+    "DELETE",
+    "GRANT",
+    "REVOKE",
+    "COMMIT",
+    "ROLLBACK",
+    "SAVEPOINT",
+    "DROP",
+    "EXISTS",
+    "GROUP",
+    "HAVING",
+    "INSERT",
+    "INNER",
+    "LIKE",
+    "ORDER",
+    "SELECT",
+    "TRUNCATE",
+    "UNION",
+    "UPDATE",
+    "WHERE"
+    ],
     "regex_list": [
       {"phrase": "SELECT(\\s|%20).*FROM(\\s|%20).*WHERE(\\s|%20).*","value": 0.1},
       {"phrase": "(\\%27)|(\\')|(\\-\\-)|(\\%23)|(#)","value": 0.2},

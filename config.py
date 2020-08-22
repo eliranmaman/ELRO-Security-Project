@@ -13,10 +13,10 @@ else:
     }
 log_dict = "logs/"
 controller = None
-# db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
-db = SQLAlchemy("elroadmin", "123456", "localhost", "3306", "elroauth")
+db = SQLAlchemy("postgres", "qwerty", "localhost", "5432", "elro_sec")
 db.connect()
-data_path = "Data/"
+data_path = "Knowledge_Base"
+config_path = "{}/config".format(data_path)
 cookies_map = dict()
 brute_force_map = dict()
 BOT_KEY = "f0ec0b2f185b868ac2f20988011328ec"
@@ -48,3 +48,5 @@ enc_key = b'&E)H@McQeThWmZq4t7w!z%C*F-JaNdRg'
 
 blocked_url = "elro-sec.com"
 blocked_path = "/blocked.html"
+
+log_format = "{}"

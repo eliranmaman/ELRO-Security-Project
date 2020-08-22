@@ -5,7 +5,7 @@ import requests
 
 from Controllers import Controller
 from Controllers.elro_controller import ElroController
-from Data.enums.controller_enums import ControllerResponseCode
+from Knowledge_Base.enums.controller_enums import ControllerResponseCode
 from Detectors.csrf import CSRF
 from Detectors.user_protection import UserProtectionDetector
 from Parser import BaseHTTPRequestParser, Parser

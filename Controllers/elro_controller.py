@@ -6,7 +6,7 @@ from http import cookies
 from Controllers import Controller
 from DBAgent import Server
 from DBAgent.orm import Services, WhiteList, BlackList, DetectorRequestData, DetectorDataResponse, to_json, CookiesToken
-from Data.enums.controller_enums import ControllerResponseCode, RedirectAnswerTo, IsAuthorized
+from Knowledge_Base.enums.controller_enums import ControllerResponseCode, RedirectAnswerTo, IsAuthorized
 from Detectors.user_protection import UserProtectionDetector, UserProtectionResults
 from config import db, blocked_path, blocked_url
 
