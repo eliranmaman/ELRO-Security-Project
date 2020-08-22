@@ -1,6 +1,3 @@
-import os
-import sys
-
 import argparse
 
 from DBAgent import Users
@@ -10,6 +7,7 @@ parser = argparse.ArgumentParser(description="This program will create a user in
 parser.add_argument("-un", "--user-name", required=True,metavar="user_name", help="The user name that will use for login to the system")
 parser.add_argument("-pwd", "--password", required=False, default="123456", metavar="password",
                     help="The password that will use for login to the system")
+
 
 def run():
     args = parser.parse_args()

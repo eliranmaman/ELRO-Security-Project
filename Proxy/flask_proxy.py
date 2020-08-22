@@ -9,6 +9,7 @@ from Parser.parser import FlaskHTTPRequestParser, HTTPResponseParser
 
 app = Flask(__name__)
 
+# The available detectors for the Controller
 detectors = {
     # "sql_detector": SQLDetector,
     "xss_detector": XSSDetector,
@@ -19,7 +20,7 @@ detectors = {
 }
 
 
-def reqest_handler():
+def request_handler():
     print("1) Parse Request")
     parser = FlaskHTTPRequestParser()
     parsed_request = parser.parse(request)
@@ -63,7 +64,7 @@ def reqest_handler():
 @app.route('/<path:path>', methods=["GET", "POST"])
 def proxy(path):
     print("0) Request Arrived (path: {})".format(path))
-    return reqest_handler()
+    return request_handler()
 
 
 if __name__ == '__main__':

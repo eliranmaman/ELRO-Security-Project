@@ -1,9 +1,6 @@
-import os
-import sys
-
 import argparse
 
-from DBAgent import Users, Server
+from DBAgent import Server
 from DBAgent.orm import Services
 from config import db
 
@@ -13,6 +10,7 @@ parser.add_argument("-ip", "--server-ip", required=True, metavar="server_ip",
                     help="The server ip that will use for redirect the requests.")
 parser.add_argument("-dns", "--server-dns", required=True, metavar="server_dns",
                     help="The server dns that will use for the requests.")
+
 
 def run():
     args = parser.parse_args()

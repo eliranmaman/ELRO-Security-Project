@@ -16,7 +16,7 @@ def to_json(item, ignore_list=None):
     for attr, value in item.__dict__.items():
         if "_sa_instance_state" in attr or attr in ignore_list:
             continue
-        json_data[attr] = value  #TODO: Why str(value)?
+        json_data[attr] = value
 
     return json_data
 
