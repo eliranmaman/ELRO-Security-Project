@@ -1,10 +1,19 @@
 import json
+import logging
 
-from DBAgent.orm import to_json
 from Detectors import Detector, Sensitivity
-from Detectors.sql_injection_detector import create_content_as_str
-from config import data_path
+from config import data_path, log_dict
 import re
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/xss_injection.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 class XMLDetector(Detector):
@@ -32,15 +41,17 @@ class XMLDetector(Detector):
         :param legitimate: The legitimate words/regex that we need automatically approve
         :return: boolean
         """
-        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
-        parsed_data_as_str += create_content_as_str(parsed_data)
+        parsed_data = str(parsed_data).upper()
+        logger.info("xml_injection got parsed_data ::--> " + parsed_data)
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
             self.__forbidden = list(filter(lambda x: x not in legitimate, self.__forbidden))
         for malicious_phrase in self.__forbidden:
-            matches = re.findall(malicious_phrase, parsed_data_as_str)
+            matches = re.findall(malicious_phrase, parsed_data)
             if len(matches) > 0:
+                logger.info("Found Threat of XML ATTACK, Forbidden regex: " + malicious_phrase + " was found in: "
+                            + parsed_data)
                 return True
         return False
 

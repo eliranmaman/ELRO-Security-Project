@@ -1,10 +1,20 @@
+import logging
 import re
 
 from DBAgent import CookiesToken
 from Detectors import Detector, Sensitivity, Classification
 from Detectors.detectors_config import token_regex
-from config import db
+from config import db, log_dict
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/cookie_poisoning.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 class CookiesPoisoning(Detector):
 
@@ -15,7 +25,7 @@ class CookiesPoisoning(Detector):
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: The path's that forbidden in any case for cross-site (list)
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean

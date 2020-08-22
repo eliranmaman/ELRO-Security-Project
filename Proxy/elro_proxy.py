@@ -1,7 +1,4 @@
-import logging
-import ssl
-import sys
-from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 
 from Controllers.elro_controller import ElroController
@@ -12,7 +9,6 @@ from Parser.parser import HTTPResponseParser
 
 from Proxy import Proxy
 from config import server
-from config import log_dict
 from Detectors import SQLDetector, BruteForce, BotsDetector, XSSDetector, XMLDetector
 
 
@@ -31,12 +27,8 @@ class BasicProxy2(Proxy):
     def start(self):
         if not self._running:
             self._running = True
-            server_address = (server["address"], 80)
-            self._httpd = ThreadingHTTPServer(server_address, BasicProxy2.RequestHandler2)
-            # self._httpd.socket = ssl.wrap_socket(self._httpd.socket,
-            #                                      certfile='/etc/letsencrypt/live/elro.cs.colman.ac.il/fullchain.pem',
-            #                                      keyfile='/etc/letsencrypt/live/elro.cs.colman.ac.il/privkey.pem',
-            #                                      server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
+            server_address = (server["address"], self._port)
+            self._httpd = HTTPServer(server_address, BasicProxy2.RequestHandler2)
             print('Proxy is alive: \n\tPort: {}\n\tAddress: {}'.format(self._port, server["address"]))
             self._httpd.serve_forever()  # should be in another Thread.
         else:
@@ -60,7 +52,7 @@ class BasicProxy2(Proxy):
             sent = False
             try:
                 detectors = {
-                    # "sql_detector": SQLDetector,
+                    "sql_detector": SQLDetector,
                     "xss_detector": XSSDetector,
                     "xml_detector": XMLDetector,
                     "csrf_detector": CSRF,
@@ -75,7 +67,7 @@ class BasicProxy2(Proxy):
                 response_code, send_to, new_request, parsed_request = controller.request_handler(parsed_request, self)
                 print("3) Parse headers")
                 req_header = new_request.parse_headers()
-                url = 'https://{}{}?{}'.format("195.201.169.229/~curlcom/elro-sec.com", parsed_request.path, parsed_request.query)
+                url = 'http://{}{}?{}'.format(parsed_request.host_name, parsed_request.path, parsed_request.query)
                 print(url)
                 if response_code == ControllerResponseCode.NotValid:
                     print("4) Not Valid")
@@ -85,7 +77,6 @@ class BasicProxy2(Proxy):
                 elif response_code == ControllerResponseCode.Valid:
                     print("4) Valid, Asking for {}".format(url))
                     resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header(parsed_request.host_name)), verify=False)
-                    print(resp)
                     print("4.1) Request Arrived")
                     parser = HTTPResponseParser(parsed_request)
                     print("5) Parse Response")

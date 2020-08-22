@@ -58,7 +58,9 @@ class SQLAlchemy(DBHandler):
 
     def __init__(self, user, password, host, port, database):
         super().__init__(user, password, host, port, database)
-        self.__engine = create_engine("postgresql+psycopg2://{}:{}@{}:{}/{}".
+        # self.__engine = create_engine("postgresql+psycopg2://{}:{}@{}:{}/{}".
+        #                               format(self._user, self._password, self._host, self._port, self._database))
+        self.__engine = create_engine("mysql+pymysql://{}:{}@{}:{}/{}".
                                       format(self._user, self._password, self._host, self._port, self._database))
         self._session = sessionmaker(bind=self.__engine)()
 

@@ -2,11 +2,7 @@ import time
 
 from DBAgent.orm import BruteForceDataItem
 from Detectors import Detector, Sensitivity, Classification
-
-
-# TODO: change brute_force_map to come from database
-# TODO: tests
-from config import db
+from config import db, log_dict
 
 
 class BruteForce(Detector):
@@ -20,7 +16,7 @@ class BruteForce(Detector):
         The method will check path that are in the forbidden list, for every path in this list
         the method will perform brute force check by number of request in the last 1min.
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean

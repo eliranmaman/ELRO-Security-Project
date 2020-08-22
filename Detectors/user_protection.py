@@ -1,19 +1,31 @@
 """
 TODO: Information, Tests.
 """
+import logging
 import math
 import re
 from functools import wraps
 from urllib.parse import urlparse
 
-from config import bit_map, url_regex, bit_map_errors
+from config import bit_map, url_regex, bit_map_errors, log_dict
 
 map_bit = bit_map
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/user_protection.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 def invoke_detector(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
+        logging.info("Invoking: " + func.__name__)
         if is_on(map_bit[func.__name__], self.bit_indicator):
             is_detected = func(self, *args, **kwargs)
             if is_detected:
@@ -63,12 +75,17 @@ class UserProtectionDetector(object):
         self.__access_cookies()
         self.__iframe()
         self.__detect_inline_scripts()
+        logger.info("user_protection result object contains::--> \n "
+                    + "urls: " + " ".join([str(url) for url in self._UserProtectionResults.csrf_urls]) + "\n"
+                    + "alerts: " + " ".join([str(alert) for alert in self._UserProtectionResults.detected_alerts]) + "\n"
+                    + "bit_map: " + str(self._UserProtectionResults.bit_map) + "\n"
+                    + "csrf_js_files: " + str(self._UserProtectionResults.csrf_js_files))
         return self._UserProtectionResults
 
     @invoke_detector
     def __detect_inline_scripts(self):
         """
-        Will looking for inline scripts in the page.
+        This method is looking for inline scripts in the page.
         :return: Boolean
         """
         return self._response.text.find("<script") > 0
@@ -77,7 +94,7 @@ class UserProtectionDetector(object):
     def __detect_script_files(self):
         """
         This method will look for attempt to load js files from other origins, It is not give as
-        100% insurance but, it is better from nothing. It is important that this method will activate after
+        100% insurance but, it is better from nothing. It is important that this method will be activated after
         "__detect_csrf_requests"
         :return: Boolean
         """
@@ -96,7 +113,7 @@ class UserProtectionDetector(object):
     @invoke_detector
     def __iframe(self):
         """
-        This method will try to detect if the page is trying to load another page in iframe.
+        This method will try to detect if the page is trying to load another page in an iframe.
         This method has high value of False Positive.
         :return: Boolean
         """
@@ -106,7 +123,7 @@ class UserProtectionDetector(object):
     def __detect_csrf_requests(self):
         """
         This method will try to detect if the page is trying to invoke Cross Site
-        Requests (CSRF), images, scripts and other are include.
+        Requests (CSRF), images, scripts and other are included.
         This method has high value of False Positive.
         :return: Boolean
         """

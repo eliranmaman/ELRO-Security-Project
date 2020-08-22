@@ -1,17 +1,19 @@
 import json
 import logging
 
-from DBAgent.orm import to_json
 from Detectors import Detector, Sensitivity
 from config import data_path, log_dict
 import re
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-def create_content_as_str(content):
-    my_str = ""
-    for item, val in content.__dict__.items():
-        my_str += "{}:{} ".format(item, val)
-    return my_str.upper()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/sql_injection.log")
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 class SqlInjection(Detector):
@@ -38,16 +40,8 @@ class SqlInjection(Detector):
          :return: boolean
 
         """
-        parsed_headers_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
-        # check for context break intentions in the headers first
-        for break_char in self.__break_characters:
-            context_breaks = re.findall(break_char, parsed_headers_as_str)
-            if len(context_breaks) > 0:
-                final_decision_assurance = self.final_validation(parsed_data)
-                return True if final_decision_assurance >= self.__SQL_THRESHOLD else False
-        # if no context breaks were found continue to check the request
-        parsed_data_as_str = create_content_as_str(parsed_data)
-        print(parsed_data_as_str)
+        parsed_data = str(parsed_data).upper()
+        logger.info("sql_injections got parsed_data ::--> " + parsed_data)
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
@@ -60,15 +54,18 @@ class SqlInjection(Detector):
         for break_char in self.__break_characters:
             context_breaks = re.findall(break_char, parsed_data)
             if len(context_breaks) > 0:
-                print("Found Threat of SQL INJECTION ATTACK, "
+                logger.info("Found Threat of SQL INJECTION ATTACK, "
                             "CONTEXT BREAK CHAR: " + break_char + " was found in: " + parsed_data)
                 context_break_list.append(context_breaks)
+                if sensitivity == Sensitivity.Sensitive:
+                    final_decision_assurance = self.final_validation(parsed_data)
+                    return True if final_decision_assurance >= self.__SQL_THRESHOLD else False
 
         # check for forbidden words
         for forbidden_word in self.__forbidden:
             forbidden_words = re.findall(forbidden_word, parsed_data)
             if len(forbidden_words) > 0:
-                print("Found Threat of SQL INJECTION ATTACK, "
+                logger.info("Found Threat of SQL INJECTION ATTACK, "
                             "Forbidden word: " + forbidden_word + " was found in: " + parsed_data)
                 forbidden_word_list.append(forbidden_words)
 
@@ -97,6 +94,7 @@ class SqlInjection(Detector):
         this method will validate if the given content
         contains sql injection payload of not as a second layer of defense
         :param content - the request/response content to validate,
+        :param forbidden - addition regex list to block with
         :param legitimate - regex list of phrases that the client allow
         :return: double number - the percentage of sql injection certainty
         """
@@ -112,6 +110,7 @@ class SqlInjection(Detector):
             for regex_dict in regex_list:
                 matches = re.findall(regex_dict["phrase"], content)
                 if len(matches) > 0:
+                    logger.info("SQL VALIDATOR FOUND: " + " ".join([str(m) for m in matches]))
                     threats_count += regex_dict["value"]
             return threats_count
 

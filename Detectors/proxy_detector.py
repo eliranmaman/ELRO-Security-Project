@@ -1,11 +1,20 @@
+import logging
 import time
 import requests
 import json
 
 from Detectors import Detector, Sensitivity, Classification
-from config import PROXY_DETECTOR_KEY_URL, PROXY_DETECTOR_KEY
+from config import PROXY_DETECTOR_KEY_URL, PROXY_DETECTOR_KEY, log_dict
 
-# TODO: tests
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/proxy_detector.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 class ProxyDetector(Detector):
@@ -17,14 +26,15 @@ class ProxyDetector(Detector):
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
-        This method will try to detect parsed_data that arrive from proxies, with pre define list & updated API that
+        This method will try to detect parsed_data that arrive from proxies, with pre defined list & updated API that
         contains list of proxies.
         :param parsed_data: send the full HttpRequest object.
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
         """
+        logger.info("proxy_detector got parsed_data ::--> " + parsed_data)
         # Pre Processing
         check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
@@ -40,7 +50,7 @@ class ProxyDetector(Detector):
 
     def __parse_ip_data(self, ip):
         """
-        This method will send request true API to get more information about the specific User-Agent
+        This method will send request through API to get more information about the specific User-Agent
         than parse the information and return it.
         :return: dict
         """
@@ -53,7 +63,6 @@ class ProxyDetector(Detector):
             proxy_detector_response = json.loads(proxy_detector_response.json())
         else:
             proxy_detector_response = proxy_detector_response.json()
-        print(proxy_detector_response)
         if "status" not in proxy_detector_response:
             return Classification.NoConclusion
         elif proxy_detector_response["status"] != "ok":

@@ -40,7 +40,7 @@ def modify_response(func):
             new_content = file.read()
         to_add = "".join(["<li>{}</li>".format(i) for i in detector_result.detected_alerts])
         if detector_result.csrf_js_files:
-            csrf_js_files = "Files that loaded from other urls:<ul style='font-size: small;s'>{}</ul>".format(
+            csrf_js_files = "Files that loaded from other urls:<ul style='font-size: small;'>{}</ul>".format(
                 "".join(["<li>{}</li>".format(i) for i in detector_result.csrf_urls]))
         else:
             csrf_js_files = ""

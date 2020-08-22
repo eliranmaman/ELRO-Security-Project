@@ -1,11 +1,20 @@
+import logging
 import time
 import requests
 import json
 
 from Detectors import Detector, Sensitivity, Classification
-from config import BOT_KEY, BOTS_URL
+from config import BOT_KEY, BOTS_URL, log_dict
 
-# TODO: tests
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler(log_dict + "/bots_detector.log", 'a+')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 class Bots(Detector):
@@ -23,7 +32,7 @@ class Bots(Detector):
         We can just look for the "sloppy" guys, by checking the User-Agent.
         This method will determine if the request arrive from bot or not.
         :param parsed_data: Parsed Data (from the parser module) of the request / response
-        :param sensitivity: The sensitivity of the detecting
+        :param sensitivity: The sensitivity of the detection
         :param forbidden: list of paths to protect
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
@@ -40,8 +49,9 @@ class Bots(Detector):
         user_agent_data = self.__parse_bots_data()
         is_detected = False
         # Start Check by the web sensitivity #
+        logger.info("Starting Check by the web sensitivity")
         # ----- Regular ----- #
-        is_detected = is_detected or user_agent_data["is_restricted"] or  user_agent_data["is_abusive"]
+        is_detected = is_detected or user_agent_data["is_restricted"] or user_agent_data["is_abusive"]
         if sensitivity == Sensitivity.Regular or is_detected:
             return is_detected
         # ----- Sensitive  ----- #
@@ -57,7 +67,7 @@ class Bots(Detector):
 
     def __parse_bots_data(self):
         """
-        This method will send request true API to get more information about the specific User-Agent
+        This method will send request through API to get more information about the specific User-Agent
         than parse the information and return it.
         :return: dict
         """
