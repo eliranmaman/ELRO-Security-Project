@@ -1,0 +1,11 @@
+{
+  "name": "bruteforce_detector",
+  "legitimate": ["*<=>blocked.html"],
+  "sensitivity": {
+    "1": 10,
+    "2": 15,
+    "3": 20,
+    "else": 3
+  },
+  "time_interval_in_sec": 60
+}

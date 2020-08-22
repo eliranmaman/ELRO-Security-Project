@@ -2,9 +2,9 @@ import enum
 
 
 class Sensitivity(enum.Enum):
-    VerySensitive = 0.1
-    Sensitive = 0.2
-    Regular = 0.3
+    VerySensitive = 1
+    Sensitive = 2
+    Regular = 3
 
 
 class Classification(enum.Enum):

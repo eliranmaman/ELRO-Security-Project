@@ -2,14 +2,13 @@ import time
 
 from DBAgent.orm import BruteForceDataItem
 from Detectors import Detector, Sensitivity, Classification
-from config import db, log_dict
+from config import db
 
 
 class BruteForce(Detector):
 
     def __init__(self):
         super().__init__()
-        self.name = "bruteforce_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
@@ -22,7 +21,7 @@ class BruteForce(Detector):
         :return: boolean
         """
         # Pre Processing
-        legitimate = ["*<=>blocked.html"] if type(legitimate) is not list else legitimate+["*<=>blocked.html"]
+        legitimate = self.kb["legitimate"] if type(legitimate) is not list else legitimate+self.kb["legitimate"]
         check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
             return False
@@ -35,17 +34,17 @@ class BruteForce(Detector):
         last_request, counter = bf_item.time_stamp, bf_item.counter
         # Sensitivity will determinate the max_counter.
         if sensitivity == Sensitivity.Regular:
-            max_counter = 20  # TODO: discuss about the const numbers.
+            max_counter = self.kb["sensitivity"][str(Sensitivity.Regular.value)]  # TODO: discuss about the const numbers.
         elif sensitivity == Sensitivity.Sensitive:
-            max_counter = 15
+            max_counter = self.kb["sensitivity"][str(Sensitivity.Sensitive.value)]
         elif sensitivity == Sensitivity.VerySensitive:
-            max_counter = 10
+            max_counter = self.kb["sensitivity"][str(Sensitivity.VerySensitive.value)]
         else:
-            max_counter = 3
+            max_counter = self.kb["sensitivity"]["else"]
         # Check if the last request was more that 1min ago
         bf_item.counter += 1
         bf_item.time_stamp = time.time()
-        if time.time() - last_request > 60:  # TODO: discuss about the const 1min.
+        if time.time() - last_request > self.kb["time_interval_in_sec"]:  # TODO: discuss about the const 1min.
             bf_item.counter = 0
         elif counter >= max_counter:
             db.commit()
@@ -97,7 +96,3 @@ class BruteForce(Detector):
 
     def get_forbidden_list(self):
         return self._forbidden
-
-    def refresh(self):
-        # TODO: implement the refresh data from Database.
-        return None
