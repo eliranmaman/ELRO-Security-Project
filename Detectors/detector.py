@@ -8,10 +8,10 @@ class Detector(object):
 
     def __init__(self):
         self._forbidden = []
-        self.name = None
-        self.kb_path = "{}/{}".format(config_path, self.__class__.__name__.lower())
+        self.kb_path = "{}/{}/config".format(config_path, self.__class__.__name__)
         self.kb = dict()
         self.load_knowledge_base()
+        self.name = self.kb["name"]
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
@@ -83,5 +83,8 @@ class Detector(object):
 
     def load_knowledge_base(self):
         with open(self.kb_path, "r", encoding="utf-8") as kb_file:
+            kb_data = json.load(kb_file)
+            self.kb.update(kb_data)
+        with open("{}/detector".format(config_path), "r", encoding="utf-8") as kb_file:
             kb_data = json.load(kb_file)
             self.kb.update(kb_data)

@@ -23,12 +23,9 @@ class XMLDetector(Detector):
     #  or only words? (especially in the legit list) - need to think on solution
     def __init__(self):
         super().__init__()
-        self.kb_path = "{}/{}/config".format(config_path, self.__class__.__name__)
-        self.load_knowledge_base()
         self.__forbidden = list()
         self.__flag = list()
         self.refresh()
-        self.name = self.kb["name"]
 
     # if detected an attack attempt this method will return True and False otherwise
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):

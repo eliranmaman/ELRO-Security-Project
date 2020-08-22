@@ -17,12 +17,9 @@ class SqlInjection(Detector):
 
     def __init__(self):
         super().__init__()
-        self.kb_path = "{}/{}/config".format(config_path, self.__class__.__name__)
-        self.load_knowledge_base()
         self.__forbidden = list()
         self.__break_characters = list()
         self.refresh()
-        self.name = self.kb["name"]
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """

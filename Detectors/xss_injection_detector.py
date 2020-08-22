@@ -19,15 +19,11 @@ from config import data_path, config_path
 
 class XSSDetector(Detector):
     """this class will detect XSS injections attempts in a given parsed request/response"""
-    __Forbidden_FILE = data_path+"/Detectors/XSSInjection/forbidden.json"
 
     def __init__(self):
         super().__init__()
-        self.kb_path = "{}/{}/config".format(config_path, self.__class__.__name__)
-        self.load_knowledge_base()
         self.__forbidden = list()
         self.refresh()
-        self.name = "xss_detector"
 
     def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
