@@ -1,0 +1,8 @@
+{
+  "name": "proxy_detector",
+  "PROXY_DETECTOR_KEY_URL": "http://proxycheck.io/v2/",
+  "PROXY_DETECTOR_KEY": "4s1v32-419650-3730en-030383",
+  "PROXY_DETECTOR_FORMAT": "{}{}?key={}",
+  "OK_STATUS": "ok",
+  "YES_STATUS":"yes"
+}

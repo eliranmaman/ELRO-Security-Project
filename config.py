@@ -20,8 +20,6 @@ config_path = "{}/config".format(data_path)
 detectors_config_path = "{}/detectors".format(config_path)
 cookies_map = dict()
 brute_force_map = dict()
-PROXY_DETECTOR_KEY = "4s1v32-419650-3730en-030383"
-PROXY_DETECTOR_KEY_URL = "http://proxycheck.io/v2/"
 
 bit_map = {
     "__detect_inline_scripts": 1,

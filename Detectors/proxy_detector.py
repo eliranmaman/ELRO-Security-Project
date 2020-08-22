@@ -1,28 +1,14 @@
-import logging
-import time
 import requests
 import json
 
 from Detectors import Detector, Sensitivity, Classification
-from config import PROXY_DETECTOR_KEY_URL, PROXY_DETECTOR_KEY, log_dict
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-file_handler = logging.FileHandler(log_dict + "/proxy_detector.log", 'a+')
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
 
 
 class ProxyDetector(Detector):
 
     def __init__(self):
         super().__init__()
-        self._proxy_url = PROXY_DETECTOR_KEY_URL
-        self.name = "proxy_detector"
+        self._proxy_url = self.kb["PROXY_DETECTOR_KEY_URL"]
 
     def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
         """
@@ -34,7 +20,6 @@ class ProxyDetector(Detector):
         :param legitimate: The path's that legitimate in any case for cross-site (list)
         :return: boolean
         """
-        logger.info("proxy_detector got parsed_data ::--> " + parsed_data)
         # Pre Processing
         check_pre_processing = self._pre_processing(forbidden, legitimate, parsed_data)
         if check_pre_processing == Classification.Clean:
@@ -54,7 +39,7 @@ class ProxyDetector(Detector):
         than parse the information and return it.
         :return: dict
         """
-        ip_url = "{}{}?key={}".format(self._proxy_url, ip, PROXY_DETECTOR_KEY)
+        ip_url = self.kb["PROXY_DETECTOR_FORMAT"].format(self._proxy_url, ip, self.kb["PROXY_DETECTOR_KEY"])
         proxy_detector_response = requests.get(ip_url)
         # ---- Check that the request is succeed ---- #
         if proxy_detector_response.status_code != 200:
@@ -65,14 +50,14 @@ class ProxyDetector(Detector):
             proxy_detector_response = proxy_detector_response.json()
         if "status" not in proxy_detector_response:
             return Classification.NoConclusion
-        elif proxy_detector_response["status"] != "ok":
+        elif proxy_detector_response["status"] != self.kb["OK_STATUS"]:
             return Classification.NoConclusion
         elif ip not in proxy_detector_response:
             return Classification.NoConclusion
         proxy_detector_response = proxy_detector_response[ip]
         if "proxy" not in proxy_detector_response:
             return Classification.NoConclusion
-        return Classification.Detected if proxy_detector_response["proxy"] == "yes" else Classification.Clean
+        return Classification.Detected if proxy_detector_response["proxy"] == self.kb["YES_STATUS"] else Classification.Clean
 
     def _is_legitimate(self, legitimate, parsed_data):
         """
