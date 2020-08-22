@@ -1,14 +1,7 @@
 import re
 
 from Detectors import Detector
-from Knowledge_Base import Sensitivity
-
-
-def create_content_as_str(content):
-    my_str = ""
-    for item, val in content.__dict__.items():
-        my_str += "{}:{} ".format(item, val)
-    return my_str.upper()
+from Knowledge_Base import Sensitivity, create_content_as_str
 
 
 class SqlInjection(Detector):

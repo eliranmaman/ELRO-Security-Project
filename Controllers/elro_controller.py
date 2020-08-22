@@ -4,10 +4,9 @@ from functools import wraps
 from http import cookies
 
 from Controllers import Controller
-from DBAgent import Server
-from DBAgent.orm import Services, WhiteList, BlackList, DetectorRequestData, DetectorDataResponse, to_json, CookiesToken
-from Knowledge_Base.enums.controller_enums import ControllerResponseCode, RedirectAnswerTo, IsAuthorized
-from Detectors.user_protection import UserProtectionDetector, UserProtectionResults
+from DBAgent import Services, WhiteList, BlackList, DetectorRequestData, DetectorDataResponse, CookiesToken, Server
+from Knowledge_Base import to_json, ControllerResponseCode, RedirectAnswerTo, IsAuthorized
+from Detectors import UserProtectionDetector, UserProtectionResults
 from config import db
 
 

@@ -1,8 +1,7 @@
 import re
 
 from Detectors import Detector
-from Knowledge_Base import Sensitivity
-from Detectors.sql_injection_detector import create_content_as_str
+from Knowledge_Base import Sensitivity, create_content_as_str
 
 
 class XMLDetector(Detector):

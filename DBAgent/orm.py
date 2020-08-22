@@ -10,23 +10,6 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, F
 from DBAgent.sqlalchemy import SQLAlchemy
 
 
-def to_json(item, ignore_list=None):
-    ignore_list = list() if ignore_list is None else ignore_list
-    json_data = dict()
-    for attr, value in item.__dict__.items():
-        if "_sa_instance_state" in attr or attr in ignore_list:
-            continue
-        json_data[attr] = value
-
-    return json_data
-
-
-def from_json(json_data, obj):
-    for attr, value in json_data.items():
-        obj.__dict__[attr] = value
-    return obj
-
-
 # This table will contain all the servers of the users
 class Server(SQLAlchemy.Item):
     __tablename__ = "servers"
@@ -44,6 +27,7 @@ class Server(SQLAlchemy.Item):
         self.server_dns = server_dns
         self.active = active
         self.time_stamp = time_stamp
+
 
 # This table will contain all the users
 class Users(SQLAlchemy.Item):
@@ -82,8 +66,10 @@ class Services(SQLAlchemy.Item):
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), unique=True, nullable=False)
     created_on = Column('created_on', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
-    def __init__(self, item_id=None, user_id=None, sql_detector=None, bots_detector=None, xss_detector=None, xml_detector=None,
-                 csrf_detector=None, cookie_poisoning_detector=None, bruteforce_detector=None, server_id=None, created_on=None):
+    def __init__(self, item_id=None, user_id=None, sql_detector=None, bots_detector=None, xss_detector=None,
+                 xml_detector=None,
+                 csrf_detector=None, cookie_poisoning_detector=None, bruteforce_detector=None, server_id=None,
+                 created_on=None):
         self.item_id = item_id
         self.user_id = user_id
         self.sql_detector = sql_detector
@@ -157,6 +143,7 @@ class DetectorDataResponse(SQLAlchemy.Item):
         self.detected = detected
         self.from_server_id = from_server_id
         self.to_ip = to_ip
+
 
 # This table will contain all the cookies token's of the requests that arrived to Elro
 class CookiesToken(SQLAlchemy.Item):
