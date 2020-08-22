@@ -70,7 +70,7 @@ def request_handler():
 
 @app.endpoint('proxy')
 def proxy(path):
-    log("Request has arrived: {}".format(request.url), LogLevel.INFO, request_handler)
+    log("Request has arrived: {} From {}".format(request.url, request.remote_addr), LogLevel.INFO, request_handler)
     return request_handler()
 
 
