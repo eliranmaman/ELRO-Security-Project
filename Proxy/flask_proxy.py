@@ -15,8 +15,7 @@ detectors = {
     "xml_detector": XMLDetector,
     "csrf_detector": CSRF,
     "bruteforce_detector": BruteForce,
-    "b"
-    "ots_detector": BotsDetector,
+    "bots_detector": BotsDetector,
 }
 
 
