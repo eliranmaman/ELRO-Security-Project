@@ -23,6 +23,7 @@ def required_authentication(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if request.remote_addr not in authorized_servers:
+            log("[API][required_authentication] Block the request from {}".format(request.remote_addr), LogLevel.INFO, self.post)
             return {"msg": "Your not authorized to perform this action", "ip": request.remote_addr, "contact": "contact@elro-sec.com"}
         return func(self, *args, **kwargs)
 
@@ -33,8 +34,10 @@ def only_json(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if not request.is_json():
+            log("[API][only_json] Could not process the request, is_json: {}".format(request.is_json()), LogLevel.INFO, self.post)
             return {"msg": "Please send json request.", "ip": request.remote_addr, "contact": "contact@elro-sec.com"}
         if request.get_json() is None:
+            log("[API][only_json] Could not process the request, get_json: None", LogLevel.INFO, self.post)
             return {"msg": "Please send json with the request.", "ip": request.remote_addr, "contact": "contact@elro-sec.com"}
         return func(self, *args, **kwargs)
 
@@ -105,7 +108,7 @@ class RegisterHandler(Resource):
             return 0
         log("[API][RegisterHandler] Registering new Client: {}".format(incoming_json['users']['email']), LogLevel.INFO, self.post)
         user = Users(email=incoming_json['users']['email'],
-                     password=sha256_crypt(str(incoming_json['users']['password'])))
+                     password=sha256_crypt.hash(str(incoming_json['users']['password'])))
         try:
             db.insert(user)
         except Exception as e:
