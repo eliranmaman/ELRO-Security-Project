@@ -33,8 +33,8 @@ def required_authentication(func):
 def only_json(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if not request.is_json():
-            log("[API][only_json] Could not process the request, is_json: {}".format(request.is_json()), LogLevel.INFO, self.post)
+        if not request.is_json:
+            log("[API][only_json] Could not process the request, is_json: {}".format(request.is_json), LogLevel.INFO, self.post)
             return {"msg": "Please send json request.", "ip": request.remote_addr, "contact": "contact@elro-sec.com"}
         if request.get_json() is None:
             log("[API][only_json] Could not process the request, get_json: None", LogLevel.INFO, self.post)
@@ -55,14 +55,14 @@ class LoginHandler(Resource):
         if len(errors) > 0:
             log("[API][LoginHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
             return 0
-        user = db.get_session().query(Users).filter(Users.email == incoming_json['email']).one()
+        user = db.get_session().query(Users).filter(Users.email == incoming_json['email']).first()
         if user is None:
             log("[API][LoginHandler] Could not locate the {} user: ".format(incoming_json['email']), LogLevel.INFO, self.post)
             return 0
         verify = sha256_crypt.verify(user.password, str(incoming_json['password']))
         if verify:
             if user.is_admin == 1:
-                log("[API][LoginHandler] Admin login has occurred: {}".format(incoming_json['email']), LogLevel.INFO)
+                log("[API][LoginHandler] Admin login has occurred: {}".format(incoming_json['email']), LogLevel.INFO, self.post)
                 return 2
             return 1
         log("[API][LoginHandler] Login Failure has occurred:: {} {}".format(request.remote_addr, incoming_json['email']), LogLevel.INFO, self.post)
@@ -159,7 +159,7 @@ class GetActiveServicesHandler(Resource):
             joined_statuses = []
             all_servers = db.get_session().query(Server).filter(Server.user_id == user.item_id).all()
             for server in all_servers:
-                services = db.get_session().query(Services).filter(Services.server_id == server.item_id).one()
+                services = db.get_session().query(Services).filter(Services.server_id == server.item_id).first()
                 joined_object = {**to_json(services), **to_json(server)}
                 joined_object['website'] = joined_object['server_dns']
                 del joined_object['server_dns']
@@ -212,7 +212,7 @@ class UpdateServiceStatusHandler(Resource):
         if len(errors) > 0:
             log("[API][UpdateServiceStatusHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
             return 0
-        server = db.get_session().query(Server).filter(Server.server_dns == incoming_json['website']).one()
+        server = db.get_session().query(Server).filter(Server.server_dns == incoming_json['website']).first()
         if server is None:
             log("[API][UpdateServiceStatusHandler] Could not find the server at the Database: {}"
                 .format(incoming_json['website']), LogLevel.INFO, self.post)
