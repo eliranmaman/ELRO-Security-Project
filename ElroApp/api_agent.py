@@ -4,10 +4,12 @@ from functools import wraps
 import requests
 from flask import Flask, request
 from flask_restful import Resource, Api
+
 from DBAgent.orm import Users, Services, Server
 from Detectors import UserProtectionDetector
 from Knowledge_Base import log, to_json, LogLevel
 from config import db, authorized_servers
+
 
 app = Flask(__name__)
 api = Api(app)
