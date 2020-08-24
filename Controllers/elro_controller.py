@@ -71,7 +71,7 @@ class ElroController(Controller):
 
     @handle_block
     def request_handler(self, parsed_request, original_request):
-        if original_request.headers.get('sec-fetch-dest', "") in ["script", "style"]:
+        if original_request.headers.get('sec-fetch-dest', "") in ["script", "style", "image"]:
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         self._request_data = DetectorRequestData(from_ip=parsed_request.from_ip)
         self._request = parsed_request
