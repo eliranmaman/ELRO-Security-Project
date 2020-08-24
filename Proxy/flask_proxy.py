@@ -12,7 +12,6 @@ from config import db
 app = Flask(__name__)
 app.url_map.add(Rule('/', endpoint='proxy', defaults={'path': ""}))
 app.url_map.add(Rule('/<path:path>', endpoint='proxy'))
-db.init_app(app)
 
 # The available detectors for the Controller
 detectors = {
