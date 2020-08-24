@@ -20,6 +20,9 @@ class SQLAlchemy(DBHandler):
                                       format(self._user, self._password, self._host, self._port, self._database))
         self._session = sessionmaker(bind=self.__engine)()
 
+    def init_app(self, application):
+        self._connection.init_app(application)
+
     def connect(self):
         """
         This function will create the connection for the database
