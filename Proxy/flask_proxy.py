@@ -3,16 +3,16 @@ from flask import Flask, request, Response, abort
 from werkzeug.routing import Rule
 
 from Controllers.elro_controller import ElroController
-from Knowledge_Base import log, to_json
-from Knowledge_Base.enums.controller_enums import ControllerResponseCode
+from Knowledge_Base import log, to_json, ControllerResponseCode, LogLevel
 from Detectors import SQLDetector, BruteForce, BotsDetector, XSSDetector, XMLDetector
 from Detectors.csrf import CSRF
-from Knowledge_Base.enums.logs_enums import LogLevel
 from Parser.parser import FlaskHTTPRequestParser, HTTPResponseParser
+from config import db
 
 app = Flask(__name__)
 app.url_map.add(Rule('/', endpoint='proxy', defaults={'path': ""}))
 app.url_map.add(Rule('/<path:path>', endpoint='proxy'))
+db.init_app(app)
 
 # The available detectors for the Controller
 detectors = {
