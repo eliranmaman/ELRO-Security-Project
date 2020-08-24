@@ -1,9 +1,9 @@
-from config import controller
+from Controllers import ElroController
 
 
 class Proxy(object):
 
-    _controller = controller
+    _controller = ElroController
 
     def __init__(self, port, logger=None):
         """
