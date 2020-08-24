@@ -34,6 +34,8 @@ class Bots(Detector):
             return True
         self._bots_data["user_agent"] = user_agent
         user_agent_data = self.__parse_bots_data()
+        if user_agent_data == Classification.NoConclusion:
+            return False
         is_detected = False
         # Start Check by the web sensitivity #
         # logger.info("Starting Check by the web sensitivity")
