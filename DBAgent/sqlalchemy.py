@@ -57,6 +57,7 @@ class SQLAlchemy(DBHandler):
         if self._session is None:
             return
         self._session.commit()
+        self._session = sessionmaker(bind=self.__engine)()
 
     def add(self, item):
         self._session.add(item)
@@ -67,8 +68,9 @@ class SQLAlchemy(DBHandler):
         for attr, value in item.__dict__.items():
             if type(value) is HTTPMessage:
                 item.__dict__[attr] = value.as_string()
-        self._session.add(item)
-        self.commit()
+        _session = sessionmaker(bind=self.__engine)()
+        _session.add(item)
+        _session.commit()
 
     def decrypt(self, item):
         return item
