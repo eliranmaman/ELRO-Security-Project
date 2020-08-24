@@ -38,7 +38,6 @@ class Bots(Detector):
             return False
         is_detected = False
         # Start Check by the web sensitivity #
-        # logger.info("Starting Check by the web sensitivity")
         # ----- Regular ----- #
         is_detected = is_detected or user_agent_data["is_restricted"] or user_agent_data["is_abusive"]
         if sensitivity == Sensitivity.Regular or is_detected:
