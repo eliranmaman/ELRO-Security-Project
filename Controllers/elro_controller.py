@@ -39,7 +39,7 @@ def modify_response(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         detector_result, redirect_to, the_response = func(self, *args, **kwargs)
-        if self._is_white_content == True and str(the_response.headers.get('Content-Type', "")) not in self.kb["white_content_list"]:
+        if self._is_white_content == True and len([i for i in self.kb["white_content_list"] if i in the_response.headers.get('Content-Type', "")]) > 0:
             return ControllerResponseCode.Failed, RedirectAnswerTo.Client, None
         if detector_result.bit_map == self.kb["clean_bit"] or self.kb["file_type"] not in the_response.headers.get('Content-Type', ""):
             return ControllerResponseCode.Valid, redirect_to, the_response.content
