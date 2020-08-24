@@ -71,9 +71,6 @@ class ElroController(Controller):
 
     @handle_block
     def request_handler(self, parsed_request, original_request):
-        if str(original_request.headers.get('sec-fetch-dest', "")) in ["script", "style", "image"]:
-            log("YESSSSSSSSSSSSSSSSSSSSSSS !!!!!!!!!!! ", LogLevel.DEBUG, self.request_handler)
-            return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         self._request_data = DetectorRequestData(from_ip=parsed_request.from_ip)
         self._request = parsed_request
         session = db.get_session()
@@ -101,6 +98,9 @@ class ElroController(Controller):
         log("_is_authorized method results is NoConclusions", LogLevel.DEBUG, self.request_handler)
         parsed_request.to_server_id = self._server.item_id
         log("Activate _list_of_detectors method", LogLevel.DEBUG, self.request_handler)
+        if str(original_request.headers.get('sec-fetch-dest', "")) in ["script", "style", "image"]:
+            log("YESSSSSSSSSSSSSSSSSSSSSSS !!!!!!!!!!! ", LogLevel.DEBUG, self.request_handler)
+            return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         detectors = self._list_of_detectors(self._server.item_id)
         log("_list_of_detectors results is {}".format(detectors), LogLevel.DEBUG, self.request_handler)
         for detector_constructor in detectors:
