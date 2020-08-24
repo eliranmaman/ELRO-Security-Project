@@ -2,15 +2,11 @@
 Crypto issue: https://github.com/openthread/openthread/issues/1137
 Varname: https://github.com/pwwang/python-varname
 """
-import json
-from functools import wraps
 from http.client import HTTPMessage
-
-from cryptography.fernet import Fernet
-
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
 from DBAgent import DBHandler
 
 
@@ -57,7 +53,6 @@ class SQLAlchemy(DBHandler):
         if self._session is None:
             return
         self._session.commit()
-        self._session = sessionmaker(bind=self.__engine)()
 
     def add(self, item):
         self._session.add(item)
@@ -68,9 +63,8 @@ class SQLAlchemy(DBHandler):
         for attr, value in item.__dict__.items():
             if type(value) is HTTPMessage:
                 item.__dict__[attr] = value.as_string()
-        _session = sessionmaker(bind=self.__engine)()
-        _session.add(item)
-        _session.commit()
+        self._session.add(item)
+        self.commit()
 
     def decrypt(self, item):
         return item
