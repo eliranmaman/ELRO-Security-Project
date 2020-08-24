@@ -56,12 +56,14 @@ def request_handler():
         log("Controller response is: {} {}".format(response_code, send_to), LogLevel.DEBUG, request_handler)
         if response_code == ControllerResponseCode.NotValid:
             send_content = new_content
-        else:
+        elif response_code == ControllerResponseCode.Valid:
             send_content = resp.content
+        else:
+            send_content = None
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
         log("Generating response...", LogLevel.INFO, request_handler)
-        response = Response(send_content, resp.status_code, headers)
+        response = Response(status=403) if send_content is None else Response(send_content, resp.status_code, headers)
     else:
         log("The Request for {} is not found in the database".format(request.url), LogLevel.INFO, request_handler)
         response = Response(status=404)

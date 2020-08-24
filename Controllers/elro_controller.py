@@ -39,6 +39,8 @@ def modify_response(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         detector_result, redirect_to, the_response = func(self, *args, **kwargs)
+        if self._is_white_content == True and str(the_response.headers.get('Content-Type', "")) not in self.kn["white_content_list"]:
+            return ControllerResponseCode.Failed, RedirectAnswerTo.Client, None
         if detector_result.bit_map == self.kb["clean_bit"] or self.kb["file_type"] not in the_response.headers.get('Content-Type', ""):
             return ControllerResponseCode.Valid, redirect_to, the_response.content
         with open(self.kb["safe_place_path"], "r") as file:
@@ -73,6 +75,7 @@ class ElroController(Controller):
         self._request_data = None
         self.response_cookie = None
         self._bit_indicator = 255
+        self._is_white_content = False
 
     @handle_block
     def request_handler(self, parsed_request, original_request):
@@ -101,7 +104,8 @@ class ElroController(Controller):
         log("_is_authorized method results is NoConclusions", LogLevel.DEBUG, self.request_handler)
         parsed_request.to_server_id = self._server.item_id
         log("Activate _list_of_detectors method", LogLevel.DEBUG, self.request_handler)
-        if str(original_request.headers.get('sec-fetch-dest', "")) in ["script", "style", "image"]:
+        if str(original_request.headers.get('sec-fetch-dest', "")) in self.kb["white_content"]:
+            self._is_white_content = True
             self._request_data.detected = "none"
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         detectors = self._list_of_detectors(self._server.item_id)
