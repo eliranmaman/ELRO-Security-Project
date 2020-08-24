@@ -104,6 +104,7 @@ class ElroController(Controller):
             log("YESSSSSSSSSSSSSSSSSSSSSSS !!!!!!!!!!! ", LogLevel.DEBUG, self.request_handler)
             parsed_request.decision = True
             self._request_data.detected = "none"
+            db.insert(self._request_data)
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         detectors = self._list_of_detectors(self._server.item_id)
         log("_list_of_detectors results is {}".format(detectors), LogLevel.DEBUG, self.request_handler)
