@@ -13,6 +13,6 @@
   "new_bit_code": "#NewBitValue#",
   "non_blocking_detectors": ["cookie_poisoning_detector"],
   "ignore_list": ["item_id", "created_on", "user_id", "server_id"],
-  "white_content": ["script", "style", "image", "font"]
+  "white_content": ["script", "style", "image", "font"],
   "white_content_list": ["javascript", "css", "image", "font", "octet-stream"]
 }
