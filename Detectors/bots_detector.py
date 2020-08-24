@@ -2,7 +2,7 @@ import requests
 import json
 
 from Detectors import Detector
-from Knowledge_Base import Sensitivity, Classification
+from Knowledge_Base import Sensitivity, Classification, log, LogLevel
 
 
 class Bots(Detector):
@@ -59,7 +59,12 @@ class Bots(Detector):
         than parse the information and return it.
         :return: dict
         """
-        bots_response = requests.post(self._bots_url, data=json.dumps(self._bots_data), headers=self._bots_header)
+        try:
+            bots_response = requests.post(self._bots_url, data=json.dumps(self._bots_data), headers=self._bots_header)
+        except Exception as e:
+            log(e, LogLevel.ERROR, self.__parse_bots_data)
+            # We could not get the data
+            return Classification.NoConclusion
         # ---- Check that the request is succeed ---- #
         if bots_response.status_code != 200:
             return Classification.NoConclusion
