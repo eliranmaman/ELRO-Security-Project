@@ -21,10 +21,15 @@ def handle_block(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         response_code, redirect_to, the_request, parsed_request = func(self, *args, **kwargs)
+        if response_code == ControllerResponseCode.Failed:
+            return response_code, redirect_to, the_request, parsed_request
+        parsed_request.decision = True
         if response_code == ControllerResponseCode.NotValid:
             parsed_request.host_name = self.kb["blocked_url"]
             parsed_request.path = self.kb["blocked_path"]
             parsed_request.query = ""
+            parsed_request.decision = False
+        db.insert(self._request_data)
         return response_code, redirect_to, the_request, parsed_request
 
     return wrapper
@@ -87,24 +92,17 @@ class ElroController(Controller):
         if is_authorized == IsAuthorized.Yes:
             log("_is_authorized method results is Yes", LogLevel.DEBUG, self.request_handler)
             self._request_data.detected = "white_list"
-            parsed_request.decision = True
-            db.insert(self._request_data)
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         elif is_authorized == IsAuthorized.No:
             log("_is_authorized method results is No", LogLevel.DEBUG, self.request_handler)
             self._request_data.detected = "black_list"
-            parsed_request.decision = False
-            db.insert(self._request_data)
             return ControllerResponseCode.NotValid, RedirectAnswerTo.Client, original_request, parsed_request
         # Get list of detectors for the server
         log("_is_authorized method results is NoConclusions", LogLevel.DEBUG, self.request_handler)
         parsed_request.to_server_id = self._server.item_id
         log("Activate _list_of_detectors method", LogLevel.DEBUG, self.request_handler)
         if str(original_request.headers.get('sec-fetch-dest', "")) in ["script", "style", "image"]:
-            log("YESSSSSSSSSSSSSSSSSSSSSSS !!!!!!!!!!! ", LogLevel.DEBUG, self.request_handler)
-            parsed_request.decision = True
             self._request_data.detected = "none"
-            db.insert(self._request_data)
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         detectors = self._list_of_detectors(self._server.item_id)
         log("_list_of_detectors results is {}".format(detectors), LogLevel.DEBUG, self.request_handler)
@@ -121,15 +119,11 @@ class ElroController(Controller):
             elif validate:
                 log(" ************* Detector {} is detected unusual activity for {} ************".format(detector.name, original_request.url), LogLevel.INFO, self.request_handler)
                 self._request_data.detected = detector.name
-                parsed_request.decision = False
                 log("Insert Information to database".format(detector.name), LogLevel.DEBUG, self.request_handler)
-                db.insert(self._request_data)
                 return ControllerResponseCode.NotValid, RedirectAnswerTo.Client, original_request, parsed_request
         log("Nothing unusual detected by the detectors.", LogLevel.INFO, self.request_handler)
-        parsed_request.decision = True
         self._request_data.detected = "none"
         log("Insert Information to database", LogLevel.DEBUG, self.request_handler)
-        db.insert(self._request_data)
         return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
 
     @modify_response
