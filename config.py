@@ -26,3 +26,4 @@ url_regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^
 
 enc_list = ["content", "headers", "cookies"]
 enc_key = b'&E)H@McQeThWmZq4t7w!z%C*F-JaNdRg'
+authorized_servers = ["77.137.114.12", "176.230.79.33"]

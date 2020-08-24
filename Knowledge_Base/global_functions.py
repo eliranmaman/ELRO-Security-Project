@@ -11,13 +11,13 @@ def create_content_as_str(content):
     return my_str.upper()
 
 
-def to_json(item, ignore_list=None):
+def to_json(item, ignore_list=None, to_str=False):
     ignore_list = list() if ignore_list is None else ignore_list
     json_data = dict()
     for attr, value in item.__dict__.items():
         if "_sa_instance_state" in attr or attr in ignore_list:
             continue
-        json_data[attr] = value
+        json_data[attr] = str(value) if to_str else value
 
     return json_data
 

@@ -1,46 +1,72 @@
-import json
-import logging
+from urllib.parse import urlparse
+from passlib.handlers.sha2_crypt import sha256_crypt
+from functools import wraps
 import requests
 from flask import Flask, request
 from flask_restful import Resource, Api
-from sqlalchemy.ext.declarative import DeclarativeMeta
+
 from DBAgent.orm import Users, Services, Server
-from Detectors.user_protection import UserProtectionDetector
-from config import db, log_dict
+from Detectors import UserProtectionDetector
+from Knowledge_Base import log, to_json, LogLevel
+from config import db, authorized_servers
+
 
 app = Flask(__name__)
 api = Api(app)
 
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
-#
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#
-# file_handler = logging.FileHandler(log_dict + "/api_agent.log", 'a+')
-# file_handler.setFormatter(formatter)
-#
-# logger.addHandler(file_handler)
+
+services_credentials = ["ip", "website", "sql_detector", "bots_detector", "xss_detector", "xml_detector",
+                        "csrf_detector", "cookie_poisoning_detector", "bruteforce_detector"]
+
+
+def required_authentication(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if request.remote_addr not in authorized_servers:
+            log("[API][required_authentication] Block the request from {}".format(request.remote_addr), LogLevel.INFO, self.post)
+            return {"msg": "Your not authorized to perform this action", "ip": request.remote_addr, "contact": "contact@elro-sec.com"}
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def only_json(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not request.is_json:
+            log("[API][only_json] Could not process the request, is_json: {}".format(request.is_json), LogLevel.INFO, self.post)
+            return {"msg": "Please send json request.", "ip": request.remote_addr, "contact": "contact@elro-sec.com"}
+        if request.get_json() is None:
+            log("[API][only_json] Could not process the request, get_json: None", LogLevel.INFO, self.post)
+            return {"msg": "Please send json with the request.", "ip": request.remote_addr, "contact": "contact@elro-sec.com"}
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class LoginHandler(Resource):
+
+    @required_authentication
+    @only_json
     def post(self):
         incoming_json = request.get_json()
-        stored_user = db.get_session().query(Users).filter(Users.email == incoming_json['email']).one()
-        decrypted_stored_user = db.decrypt(stored_user)
-        password = decrypted_stored_user.password
-
-        if password == incoming_json['password']:
-            if decrypted_stored_user.is_admin == 1:
-                print("Admin login has occurred: => " + incoming_json['email'])
+        errors = check_json_object(incoming_json, ["email", "password"],
+                                   "Could not find {} at the incoming json object.")
+        if len(errors) > 0:
+            log("[API][LoginHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        user = db.get_session().query(Users).filter(Users.email == incoming_json['email']).first()
+        if user is None:
+            log("[API][LoginHandler] Could not locate the {} user: ".format(incoming_json['email']), LogLevel.INFO, self.post)
+            return 0
+        verify = sha256_crypt.verify(user.password, str(incoming_json['password']))
+        if verify:
+            if user.is_admin == 1:
+                log("[API][LoginHandler] Admin login has occurred: {}".format(incoming_json['email']), LogLevel.INFO, self.post)
                 return 2
             return 1
-        print("Login Failure has occurred: IP=>"+ request.remote_addr + incoming_json['email'])
+        log("[API][LoginHandler] Login Failure has occurred:: {} {}".format(request.remote_addr, incoming_json['email']), LogLevel.INFO, self.post)
         return 0
-
-
-def get_user_id_by_email(email):
-    user = db.get_session().query(Users).filter(Users.email == email).first()
-    return user.item_id
 
 
 def create_services_object(user_id, incoming_json, server_id):
@@ -56,94 +82,106 @@ def create_services_object(user_id, incoming_json, server_id):
     return users_services
 
 
+def check_json_object(json_object, credential_list, message):
+    return [message.format(field) for field in credential_list if field not in json_object]
+
+
 class RegisterHandler(Resource):
     """ registers a new client, and his protection preferences """
 
+    @required_authentication
+    @only_json
     def post(self):
         incoming_json = request.get_json()
-        print("*** Registering new Client ***" + incoming_json['users']['email'])
-        user = Users(email=incoming_json['users']['email'], password=incoming_json['users']['password'])
-        db.insert(user)
-        user_id = user.item_id
-        server = Server(user_id=user_id,
+        errors = check_json_object(incoming_json, ["users", "services"], "Could not find {} at the incoming json object.")
+        if len(errors) > 0:
+            log("[API][RegisterHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        errors += check_json_object(incoming_json['users'], ["email", "password"], "Missing {} for the user credentials")
+        if len(errors) > 0:
+            log("[API][RegisterHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        errors += check_json_object(incoming_json['services'], services_credentials,
+                                    message="Missing {} for the services credentials")
+        if len(errors) > 0:
+            log("[API][RegisterHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        log("[API][RegisterHandler] Registering new Client: {}".format(incoming_json['users']['email']), LogLevel.INFO, self.post)
+        user = Users(email=incoming_json['users']['email'],
+                     password=sha256_crypt.hash(str(incoming_json['users']['password'])))
+        try:
+            db.insert(user)
+        except Exception as e:
+            errors = [str(e)]
+        finally:
+            if user.item_id is None:
+                log("[API][RegisterHandler] Could not insert the user into the database, contact the server "
+                    "administrator: {} ".format(errors), LogLevel.INFO, self.post)
+                return 0
+        server = Server(user_id=user.item_id,
                          server_ip=incoming_json['services']['ip'],
                          server_dns=incoming_json['services']['website'])
-        db.insert(server)
-        server_id = server.item_id
-        user_services = create_services_object(user_id=user_id, incoming_json=incoming_json, server_id=server_id)
+        try:
+            db.insert(server)
+        except Exception as e:
+            errors = [str(e)]
+        finally:
+            if server.item_id is None:
+                log("[API][RegisterHandler] Could not insert the server into the database, contact the server "
+                    "administrator: {} ".format(errors), LogLevel.INFO, self.post)
+                return 0
+        user_services = create_services_object(user_id=user.item_id, incoming_json=incoming_json,
+                                               server_id=server.item_id)
         try:
             db.insert(user_services)
-            return 1
         except Exception as e:
-            print("Error when registering new client, Error: ", e)
-            return 0
-
-
-def serialize_sets(obj):
-    if isinstance(obj, set):
-        return list(obj)
-
-    return obj
-
-
-class AlchemyEncoder(json.JSONEncoder):
-
-    def default(self, obj):
-        if isinstance(obj.__class__, DeclarativeMeta):
-            # an SQLAlchemy class
-            fields = {}
-            for field in [x for x in dir(obj) if not x.startswith('_') and x != 'metadata']:
-                data = obj.__getattribute__(field)
-                try:
-                    json.dumps(data)  # this will fail on non-encodable values, like other classes
-                    fields[field] = data
-                except TypeError:
-                    fields[field] = None
-            # a json-encodable dict
-            return fields
-
-        return json.JSONEncoder.default(self, obj)
+            errors = [str(e)]
+        finally:
+            if user_services.item_id is None:
+                log("[API][RegisterHandler] Could not insert the services into the database, contact the server "
+                    "administrator: {} ".format(errors), LogLevel.INFO, self.post)
+                return 0
+        return 1
 
 
 class GetActiveServicesHandler(Resource):
+
+    @required_authentication
+    @only_json
     def post(self):
         incoming_json = request.get_json()
-        user_id = get_user_id_by_email(email=incoming_json["email"])
+        errors = check_json_object(incoming_json, ["email"], "Could not find {} at the incoming json object.")
+        if len(errors) > 0:
+            log("[API][GetActiveServicesHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return False
+        user = db.get_session().query(Users).filter(Users.email == incoming_json["email"]).first()
         try:
             joined_statuses = []
-            all_servers = db.get_session().query(Server).filter(Server.user_id == user_id).all()
+            all_servers = db.get_session().query(Server).filter(Server.user_id == user.item_id).all()
             for server in all_servers:
-                services = db.get_session().query(Services).filter(Services.server_id == server.item_id).one()
+                services = db.get_session().query(Services).filter(Services.server_id == server.item_id).first()
                 joined_object = {**to_json(services), **to_json(server)}
                 joined_object['website'] = joined_object['server_dns']
                 del joined_object['server_dns']
                 joined_statuses.append(joined_object)
-
+            log("[API][GetActiveServicesHandler] return {}".format(joined_statuses), LogLevel.DEBUG, self.post)
             return joined_statuses
-
         except Exception as e:
-            print("error on GetActiveServicesHandler", e)
+            log("[API][GetActiveServicesHandler] Exception: {}".format(e), LogLevel.ERROR, self.post)
             return False
 
 
-def to_json(item):
-    json_data = dict()
-    for attr, value in item.__dict__.items():
-        if "_sa_instance_state" in attr:
-            continue
-        json_data[attr] = str(value)
-
-    return json_data
-
-
 class GetUsersDataHandler(Resource):
+
+    @required_authentication
     def post(self):
+        # TODO: Royi I don't have any idea what you try to do here.. fix it.
         all_users = db.get_session().query(Users).all()
         all_servers = db.get_session().query(Server).all()
         all_services = db.get_session().query(Services).all()
         joined_objects = []
         for user in all_users:
-            current_object = to_json(user)
+            current_object = to_json(user, to_str=True)
             del current_object["password"]
             for server in all_servers:
                 if server.user_id == user.item_id:
@@ -152,76 +190,136 @@ class GetUsersDataHandler(Resource):
                         if service.server_id == server.item_id:
                             current_object = {**current_object, **to_json(service)}
                             joined_objects.append(current_object)
-        print(joined_objects)
+        log("[API][GetUsersDataHandler] joined_objects: {}".format(joined_objects), LogLevel.DEBUG, self.post)
 
         return joined_objects
 
 
 class GetCustomersStatisticsHandler(Resource):
+
+    @required_authentication
     def post(self):
-        return {'bye': 'world'}
+        return {'bye': 'world'}  # TODO: Royi do we realy need this?!
 
 
 class UpdateServiceStatusHandler(Resource):
+
+    @required_authentication
+    @only_json
     def post(self):
         incoming_json = request.get_json()
-        user_id = get_user_id_by_email(incoming_json['email'])
-        server = db.get_session().query(Server).filter(Server.server_dns == incoming_json['website']).one()
-        services = db.get_session().query(Services).filter(Services.server_id == server.item_id).one()
+        errors = check_json_object(incoming_json, ["website", "update_data"], "Could not find {} at the incoming json object.")
+        if len(errors) > 0:
+            log("[API][UpdateServiceStatusHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        server = db.get_session().query(Server).filter(Server.server_dns == incoming_json['website']).first()
+        if server is None:
+            log("[API][UpdateServiceStatusHandler] Could not find the server at the Database: {}"
+                .format(incoming_json['website']), LogLevel.INFO, self.post)
+            return 0
         update_data = incoming_json['update_data']
         update_data_final = {k: 1 if v == 'True' else 0 for k, v in update_data.items()}
         sess = db.get_session()
         sess.query(Services).filter(Services.server_id == server.item_id).update(update_data_final)
         sess.commit()
         sess.close()
-
+        log("[API][UpdateServiceStatusHandler] Services update successfully for: {}".format(server.server_dns), LogLevel.INFO,
+            self.post)
         return 1
 
 
 class AdminUpdateServiceStatusHandler(Resource):
+
+    @required_authentication
+    @only_json
     def post(self):
         incoming_json = request.get_json()
-        print("admin update**** ")
-        print(type(incoming_json['update_data']))
+        errors = check_json_object(incoming_json, ["update_data"], "Could not find {} at the incoming json object.")
+        if len(errors) > 0:
+            log("[API][AdminUpdateServiceStatusHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        log("[API][AdminUpdateServiceStatusHandler] admin update: {}"
+            .format(type(incoming_json['update_data'])), LogLevel.DEBUG, self.post)
         update_data = incoming_json['update_data']
         sess = db.get_session()
         sess.query(Services).update(update_data)
-
         sess.commit()
         sess.close()
+        log("[API][AdminUpdateServiceStatusHandler] Date updated: {}".format(incoming_json['update_data']),
+            LogLevel.DEBUG, self.post)
         return 1
 
 
 class AddNewWebsiteHandler(Resource):
     """ adding a new website, and its specific protection preferences to an existing client """
+
+    @required_authentication
+    @only_json
     def post(self):
         incoming_json = request.get_json()
-        user_id = get_user_id_by_email(email=incoming_json["email"])
-        server = Server(user_id=user_id,
+        errors = check_json_object(incoming_json, ["email", "services"], "Could not find {} at the incoming json object.")
+        if len(errors) > 0:
+            log("[API][AddNewWebsiteHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        errors = check_json_object(incoming_json["services"], services_credentials,
+                                   "Could not find {} at the services json object.")
+        if len(errors) > 0:
+            log("[API][AddNewWebsiteHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        user = db.get_session().query(Users).filter(Users.email == incoming_json["email"]).first()
+        if user is None:
+            log("[API][AddNewWebsiteHandler] Could not find this user at the datABASE: {}".format(incoming_json["email"]), LogLevel.INFO, self.post)
+            return 0
+        server = Server(user_id=user.item_id,
                         server_ip=incoming_json['services']['ip'],
                         server_dns=incoming_json['services']['website'])
-        db.insert(server)
-        server_id = server.item_id
-        users_services = create_services_object(user_id=user_id, incoming_json=incoming_json,server_id=server_id)
         try:
-            db.insert(users_services)
-            return 1
+            db.insert(server)
         except Exception as e:
-            print("Error when trying to add a new website: " + incoming_json['services']['website'], e)
-            return 0
+            errors = [e]
+        finally:
+            if server.item_id is None:
+                log("[API][RegisterHandler] Could not insert the server into the database, contact the server "
+                    "administrator: {} ".format(errors), LogLevel.INFO, self.post)
+                return 0
+        users_services = create_services_object(user_id=user.item_id, incoming_json=incoming_json, server_id=server.item_id)
+        try:
+            db.insert(users_services)  # TODO: Royi this is Duplicate code (just copy past from register user)
+        except Exception as e:
+            errors = [str(e)]
+        finally:
+            if users_services.item_id is None:
+                log("[API][AddNewWebsiteHandler] Could not insert the services into the database, contact the server "
+                    "administrator: {} ".format(errors), LogLevel.INFO, self.post)
+                return 0
+        return 1
 
 
 class UserProtectorHandler(Resource):
+
+    @required_authentication
+    @only_json
     def post(self):
         incoming_json = request.get_json()
-        host_to_detect = incoming_json['host_name']
-        host_to_detect = host_to_detect.replace("http://", "")
-        host_to_detect = host_to_detect.replace("https://", "")
-        host_to_detect = "https://"+host_to_detect
-        print("getting info with UserProtectionDetector for: " + host_to_detect)
-        response = requests.get(host_to_detect)
+        errors = check_json_object(incoming_json, ["host_name"], "Could not find {} at the incoming json object.")
+        if len(errors) > 0:
+            log("[API][UserProtectorHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
+            return 0
+        host_to_detect = urlparse(str(incoming_json['host_name']))
+        host_to_detect = '{uri.netloc}'.format(uri=host_to_detect).lower()
+        if len(host_to_detect) < 3:
+            log("[API][UserProtectorHandler] Could not detect this host: {}".format(host_to_detect), LogLevel.INFO, self.post)
+            return 0
+        host_to_detect = "https://{}".format(host_to_detect)
+        log("[API][UserProtectorHandler] getting info with UserProtectionDetector for: {}"
+            .format(host_to_detect), LogLevel.INFO, self.post)
+        try:
+            response = requests.get(host_to_detect)
+        except Exception as e:
+            log("[API][UserProtectorHandler] Could not get response: {}".format(e), LogLevel.ERROR, self.post)
+            return 0
         upc = UserProtectionDetector(response)
-        resp = upc.detect()
+        resp = upc.detect(255)
         return {"alerts": resp.security_alerts}
 
 
@@ -235,5 +333,3 @@ api.add_resource(AdminUpdateServiceStatusHandler, '/adminUpdateServiceStatus')
 api.add_resource(AddNewWebsiteHandler, '/addNewWebsite')
 api.add_resource(UserProtectorHandler, '/userProtector')
 
-if __name__ == '__main__':
-    app.run(debug=True)
