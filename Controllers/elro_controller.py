@@ -102,11 +102,11 @@ class ElroController(Controller):
         # Get list of detectors for the server
         log("_is_authorized method results is NoConclusions", LogLevel.DEBUG, self.request_handler)
         parsed_request.to_server_id = self._server.item_id
-        log("Activate _list_of_detectors method", LogLevel.DEBUG, self.request_handler)
         if str(original_request.headers.get('sec-fetch-dest', "")) in self.kb["white_content"]:
             self._is_white_content = True
             self._request_data.detected = "none"
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
+        log("Activate _list_of_detectors method", LogLevel.DEBUG, self.request_handler)
         detectors = self._list_of_detectors(self._server.item_id)
         log("_list_of_detectors results is {}".format(detectors), LogLevel.DEBUG, self.request_handler)
         for detector_constructor in detectors:

@@ -27,7 +27,7 @@ hsts = HSTS()
 
 
 def request_handler():
-    try:
+    # try:
         log("Is the request is HTTPS? ", LogLevel.INFO, request_handler)
         if not request.is_secure:
             return Response(status=301, headers=hsts.enforce(request.url))
@@ -76,11 +76,11 @@ def request_handler():
             abort(404)  # Abort the request.
         log("Sending response", LogLevel.INFO, request_handler)
         return response
-    except Exception as e:
-        log("Exception: {}".format(e), LogLevel.FATAL, request_handler)
-        response = Response(status=404)
-        abort(404)  # Abort the request.
-        return response
+    # except Exception as e:
+    #     log("Exception: {}".format(e), LogLevel.FATAL, request_handler)
+    #     response = Response(status=404)
+    #     abort(404)  # Abort the request.
+    #     return response
 
 
 
