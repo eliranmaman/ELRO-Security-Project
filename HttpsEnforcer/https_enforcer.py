@@ -15,17 +15,15 @@ class HSTS(HTTPSEnforcer):
     def is_connection_secure(self, request):
         pass
 
-    def enforce(self, request):
+    def enforce(self, request_url):
         """
         We will generate new response with HSTS header, and send it to the client.
-        :param request: The request
-        :return: None
+        :param request_url: The request url (str)
+        :return: dict
         """
-        response = Response()
-        response.status_code = 403
-        response.code = "Forbidden"
-        response._content = ""
-        response.error_type = "Forbidden"
-        response.headers = {'Strict-Transport-Security': "max-age=15552000; preload"}
-        request.send_response(response.status_code)
-        request.send_resp_headers(response)
+        headers = {
+            'Strict-Transport-Security': "max-age=15552000; preload",
+            "Location": "https://{}"
+                .format(request_url.replace("http://", "").replace("www.", "").replace("https://", ""))
+        }
+        return headers

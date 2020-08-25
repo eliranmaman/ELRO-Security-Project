@@ -87,7 +87,7 @@ class Services(SQLAlchemy.Item):
 class BlackList(SQLAlchemy.Item):
     __tablename__ = "blacklist"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    ip = Column('password', String(1000), nullable=False)
+    ip = Column('ip', String(1000), nullable=False)
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -102,7 +102,7 @@ class BlackList(SQLAlchemy.Item):
 class WhiteList(SQLAlchemy.Item):
     __tablename__ = "whitelist"
     item_id = Column('id', Integer, primary_key=True, unique=True)
-    ip = Column('password', String(1000), nullable=False)
+    ip = Column('ip', String(1000), nullable=False)
     server_id = Column('server_id', Integer, ForeignKey("servers.id"), nullable=False)
     time_stamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 
@@ -168,7 +168,7 @@ class BruteForceDataItem(SQLAlchemy.Item):
     item_id = Column('id', Integer, primary_key=True, unique=True)
     dns_name = Column('dns_name', String, nullable=False)
     ip = Column('ip', String, nullable=False)
-    path = Column('token', String, nullable=False)
+    path = Column('path', String, nullable=False)
     counter = Column('counter', Integer, default=0, nullable=False)
     time_stamp = Column('time_stamp', Integer, nullable=False, default=time.time())
 

@@ -3,11 +3,11 @@ from flask import Flask, request, Response, abort
 from werkzeug.routing import Rule
 
 from Controllers.elro_controller import ElroController
+from HttpsEnforcer import HSTS
 from Knowledge_Base import log, to_json, ControllerResponseCode, LogLevel
 from Detectors import SQLDetector, BruteForce, BotsDetector, XSSDetector, XMLDetector
 from Detectors.csrf import CSRF
 from Parser.parser import FlaskHTTPRequestParser, HTTPResponseParser
-from config import db
 
 app = Flask(__name__)
 app.url_map.add(Rule('/', endpoint='proxy', defaults={'path': ""}))
@@ -23,9 +23,14 @@ detectors = {
     "bots_detector": BotsDetector,
 }
 
+hsts = HSTS()
+
 
 def request_handler():
     try:
+        log("Is the request is HTTPS? ", LogLevel.INFO, request_handler)
+        if not request.is_secure:
+            return Response(status=301, headers=hsts.enforce(request.url))
         log("Start parsing the request", LogLevel.INFO, request_handler)
         parser = FlaskHTTPRequestParser()
         parsed_request = parser.parse(request)
