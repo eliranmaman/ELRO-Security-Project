@@ -1,7 +1,7 @@
 {
   "blocked_url": "elro-sec.com",
   "blocked_path": "/blocked.html",
-  "safe_place_path": "../templates/safe_place.html",
+  "safe_place_path": "templates/safe_place.html",
   "clean_bit": 0,
   "file_type": "text/html",
   "join_format": "<li>{}</li>",
