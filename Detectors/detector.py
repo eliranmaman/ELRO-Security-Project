@@ -87,4 +87,4 @@ class Detector(object):
             self.kb.update(kb_data)
         with open("{}/detector".format(detectors_config_path), "r", encoding="utf-8") as kb_file:
             kb_data = json.load(kb_file)
-            self.kb = list(set())
+            self.kb.update(kb_data)
