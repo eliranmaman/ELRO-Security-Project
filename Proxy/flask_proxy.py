@@ -77,6 +77,7 @@ def request_handler():
         log("Sending response", LogLevel.INFO, request_handler)
         return response
     except Exception as e:
+        log("Exception: {}".format(e), LogLevel.FATAL, request_handler)
         response = Response(status=404)
         abort(404)  # Abort the request.
         return response
