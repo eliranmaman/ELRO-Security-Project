@@ -169,7 +169,7 @@ class GetActiveServicesHandler(Resource):
                     log("[API][GetActiveServicesHandler] Could not find the services in the DB: {}".format(
                         server.server_dns), LogLevel.INFO, self.post)
                     return False
-                jsoned_services = to_json(services, to_str=True)
+                jsoned_services = to_json(services, ignore_list=["server_id", "user_id", "id", "created_on"], to_str=True)
                 final_services_json = {
                     value: {
                         "state": value,
