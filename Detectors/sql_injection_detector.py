@@ -1,7 +1,8 @@
+import json
 import re
 
 from Detectors import Detector
-from Knowledge_Base import Sensitivity, create_content_as_str
+from Knowledge_Base import Sensitivity, create_content_as_str, LogLevel, log
 
 
 class SqlInjection(Detector):
@@ -24,8 +25,18 @@ class SqlInjection(Detector):
          :return: boolean
 
         """
-        parsed_data_as_str = create_content_as_str(parsed_data.headers)  # Copy the parsed data to avoid change the origin
-        parsed_data_as_str += create_content_as_str(parsed_data)
+
+        # check the query string first (url params)
+        query_string = parsed_data.headers.__dict__['environ']['QUERY_STRING']
+        for break_char in self.__break_characters:
+            context_breaks = re.findall(break_char, query_string)
+            if len(context_breaks) > 0:
+                log("INSIDE LEN > 0", LogLevel.INFO, self.detect)
+                final_decision_assurance = self.final_validation(query_string, Sensitivity.VerySensitive)
+                return True if final_decision_assurance >= self.kb["threshold"] else False
+
+        # if no context breaks were found continue to check the request
+        parsed_data_as_str = create_content_as_str(parsed_data) # Copy the parsed data to avoid change the origin
         if forbidden is not None:
             self.__forbidden += forbidden
         if legitimate is not None:
@@ -34,7 +45,7 @@ class SqlInjection(Detector):
         context_break_list = []
         forbidden_word_list = []
 
-        # check for context break intentions
+        # check for context break intentions in the request itself
         for break_char in self.__break_characters:
             context_breaks = re.findall(break_char, parsed_data_as_str)
             if len(context_breaks) > 0:
@@ -74,12 +85,12 @@ class SqlInjection(Detector):
         self.__forbidden = list(set(self.__forbidden) | set(self.kb["forbidden"]))
         self.__break_characters = list(set(self.__break_characters) | set(self.kb["break_characters"]))
 
-    def final_validation(self, content, legitimate=None):
+    def final_validation(self, content, sensitivity=Sensitivity.Regular, legitimate=None):
         """
         this method will validate if the given content
         contains sql injection payload of not as a second layer of defense
         :param content - the request/response content to validate,
-        :param forbidden - addition regex list to block with
+        :param sensitivity - the sensitivity of the validation
         :param legitimate - regex list of phrases that the client allow
         :return: double number - the percentage of sql injection certainty
         """
@@ -95,6 +106,9 @@ class SqlInjection(Detector):
             if len(matches) > 0:
                 # logger.info("SQL VALIDATOR FOUND: " + " ".join([str(m) for m in matches]))
                 threats_count += regex_dict["value"]
+
+        if sensitivity is Sensitivity.VerySensitive:
+            threats_count = 2*threats_count
         return threats_count
 
 

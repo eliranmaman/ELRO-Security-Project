@@ -11,7 +11,7 @@ class BruteForce(Detector):
     def __init__(self):
         super().__init__()
 
-    def detect(self, parsed_data, sensitivity=Sensitivity.VerySensitive, forbidden=None, legitimate=None):
+    def detect(self, parsed_data, sensitivity=Sensitivity.Regular, forbidden=None, legitimate=None):
         """
         The method will check path that are in the forbidden list, for every path in this list
         the method will perform brute force check by number of request in the last 1min.

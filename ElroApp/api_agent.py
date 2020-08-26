@@ -5,9 +5,10 @@ import requests
 from flask import Flask, request
 from flask_restful import Resource, Api
 
-from DBAgent.orm import Users, Services, Server
+from DBAgent.orm import Users, Services, Server, DetectorRequestData
 from Detectors import UserProtectionDetector
 from Knowledge_Base import log, to_json, LogLevel
+from Parser.parser import HTTPResponseParser
 from config import db, authorized_servers
 
 
@@ -59,7 +60,7 @@ class LoginHandler(Resource):
         if user is None:
             log("[API][LoginHandler] Could not locate the {} user: ".format(incoming_json['email']), LogLevel.INFO, self.post)
             return 0
-        verify = sha256_crypt.verify(user.password, str(incoming_json['password']))
+        verify = sha256_crypt.verify(str(incoming_json['password']), user.password)
         if verify:
             if user.is_admin == 1:
                 log("[API][LoginHandler] Admin login has occurred: {}".format(incoming_json['email']), LogLevel.INFO, self.post)
@@ -149,18 +150,42 @@ class GetActiveServicesHandler(Resource):
     @required_authentication
     @only_json
     def post(self):
+        def count_total_records(key):
+            return db.get_session().query(DetectorRequestData).filter_by(detected=key).count()
+
+        def count_server_records(server_id, key):
+            return db.get_session().query(DetectorRequestData).filter_by(detected=key, to_server_id=server_id).count()
+
         incoming_json = request.get_json()
         errors = check_json_object(incoming_json, ["email"], "Could not find {} at the incoming json object.")
         if len(errors) > 0:
             log("[API][GetActiveServicesHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
             return False
         user = db.get_session().query(Users).filter(Users.email == incoming_json["email"]).first()
+        if user is None:
+            log("[API][GetActiveServicesHandler] Could not find the user in the DB: {}".format(incoming_json["email"]), LogLevel.INFO, self.post)
+            return False
         try:
             joined_statuses = []
             all_servers = db.get_session().query(Server).filter(Server.user_id == user.item_id).all()
+            log("[API][GetActiveServicesHandler] all_servers: {}".format(all_servers), LogLevel.INFO, self.post)
             for server in all_servers:
+                log("[API][GetActiveServicesHandler] server: {}".format(server), LogLevel.INFO, self.post)
                 services = db.get_session().query(Services).filter(Services.server_id == server.item_id).first()
-                joined_object = {**to_json(services), **to_json(server)}
+                if services is None:
+                    log("[API][GetActiveServicesHandler] Could not find the services in the DB: {}".format(
+                        server.server_dns), LogLevel.INFO, self.post)
+                    return False
+                jsoned_services = to_json(services, ignore_list=["server_id", "user_id", "id", "created_on"], to_str=True)
+                final_services_json = {
+                    key: {
+                        "state": value,
+                        "count": count_total_records(key) if user.is_admin else count_server_records(server.item_id, key)
+                    }
+                    for key, value in jsoned_services.items()
+                }
+                log("[API][GetActiveServicesHandler] final_services_json: {}".format(final_services_json), LogLevel.INFO, self.post)
+                joined_object = {**final_services_json, **to_json(server, to_str=True)}
                 joined_object['website'] = joined_object['server_dns']
                 del joined_object['server_dns']
                 joined_statuses.append(joined_object)
@@ -175,7 +200,6 @@ class GetUsersDataHandler(Resource):
 
     @required_authentication
     def post(self):
-        # TODO: Royi I don't have any idea what you try to do here.. fix it.
         all_users = db.get_session().query(Users).all()
         all_servers = db.get_session().query(Server).all()
         all_services = db.get_session().query(Services).all()
@@ -185,21 +209,21 @@ class GetUsersDataHandler(Resource):
             del current_object["password"]
             for server in all_servers:
                 if server.user_id == user.item_id:
-                    current_object = {**current_object, **to_json(server)}
+                    current_object = {**current_object, **to_json(server, to_str=True)}
                     for service in all_services:
                         if service.server_id == server.item_id:
-                            current_object = {**current_object, **to_json(service)}
+                            current_object = {**current_object, **to_json(service, ignore_list=["server_id", "user_id", "id", "created_on"], to_str=True)}
                             joined_objects.append(current_object)
         log("[API][GetUsersDataHandler] joined_objects: {}".format(joined_objects), LogLevel.DEBUG, self.post)
 
         return joined_objects
 
 
-class GetCustomersStatisticsHandler(Resource):
+class TestAPI(Resource):
 
     @required_authentication
     def post(self):
-        return {'bye': 'world'}  # TODO: Royi do we realy need this?!
+        return {'bye': 'world'}
 
 
 class UpdateServiceStatusHandler(Resource):
@@ -219,10 +243,10 @@ class UpdateServiceStatusHandler(Resource):
             return 0
         update_data = incoming_json['update_data']
         update_data_final = {k: 1 if v == 'True' else 0 for k, v in update_data.items()}
+        log("[API][UpdateServiceStatusHandler] Services update_data_final: {}".format(update_data_final), LogLevel.INFO, self.post)
         sess = db.get_session()
         sess.query(Services).filter(Services.server_id == server.item_id).update(update_data_final)
         sess.commit()
-        sess.close()
         log("[API][UpdateServiceStatusHandler] Services update successfully for: {}".format(server.server_dns), LogLevel.INFO,
             self.post)
         return 1
@@ -244,7 +268,6 @@ class AdminUpdateServiceStatusHandler(Resource):
         sess = db.get_session()
         sess.query(Services).update(update_data)
         sess.commit()
-        sess.close()
         log("[API][AdminUpdateServiceStatusHandler] Date updated: {}".format(incoming_json['update_data']),
             LogLevel.DEBUG, self.post)
         return 1
@@ -317,17 +340,19 @@ class UserProtectorHandler(Resource):
             response = requests.get(host_to_detect)
         except Exception as e:
             log("[API][UserProtectorHandler] Could not get response: {}".format(e), LogLevel.ERROR, self.post)
-            return 0
-        upc = UserProtectionDetector(response)
+            return {"alerts": ["We could not process the request, please check that the url is valid."]}
+        parser = HTTPResponseParser(None)
+        parsed_response = parser.parse(response, is_user_protection=True)
+        upc = UserProtectionDetector(parsed_response)
         resp = upc.detect(255)
-        return {"alerts": resp.security_alerts}
+        return {"alerts": resp.detected_alerts}
 
 
 api.add_resource(LoginHandler, '/login')
 api.add_resource(RegisterHandler, '/register')
 api.add_resource(GetActiveServicesHandler, '/getActiveServices')
 api.add_resource(GetUsersDataHandler, '/getUsersData')
-api.add_resource(GetCustomersStatisticsHandler, '/getCustomersStatistics')
+api.add_resource(TestAPI, '/TestAPI')
 api.add_resource(UpdateServiceStatusHandler, '/updateServiceStatus')
 api.add_resource(AdminUpdateServiceStatusHandler, '/adminUpdateServiceStatus')
 api.add_resource(AddNewWebsiteHandler, '/addNewWebsite')

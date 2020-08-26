@@ -2,7 +2,7 @@ import requests
 import json
 
 from Detectors import Detector
-from Knowledge_Base import Sensitivity, Classification
+from Knowledge_Base import Sensitivity, Classification, log, LogLevel
 
 
 class Bots(Detector):
@@ -34,9 +34,10 @@ class Bots(Detector):
             return True
         self._bots_data["user_agent"] = user_agent
         user_agent_data = self.__parse_bots_data()
+        if user_agent_data == Classification.NoConclusion:
+            return False
         is_detected = False
         # Start Check by the web sensitivity #
-        # logger.info("Starting Check by the web sensitivity")
         # ----- Regular ----- #
         is_detected = is_detected or user_agent_data["is_restricted"] or user_agent_data["is_abusive"]
         if sensitivity == Sensitivity.Regular or is_detected:
@@ -58,7 +59,12 @@ class Bots(Detector):
         than parse the information and return it.
         :return: dict
         """
-        bots_response = requests.post(self._bots_url, data=json.dumps(self._bots_data), headers=self._bots_header)
+        try:
+            bots_response = requests.post(self._bots_url, data=json.dumps(self._bots_data), headers=self._bots_header)
+        except Exception as e:
+            log(e, LogLevel.ERROR, self.__parse_bots_data)
+            # We could not get the data
+            return Classification.NoConclusion
         # ---- Check that the request is succeed ---- #
         if bots_response.status_code != 200:
             return Classification.NoConclusion

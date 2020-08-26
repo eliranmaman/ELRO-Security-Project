@@ -11,20 +11,19 @@ from Knowledge_Base.enums.logs_enums import LogLevel
 from config import db
 
 
-# TODO: 1) Its making a circle click "approve" => blocked from brute force => show user protection => click "approve" => ... => ... (I think it's done.)
-#       2) SQL Detector (validator) how to put it in ?
-#       3) deploy on the server (doron need to open the 80, 443, 22 port for network out)
-#       4)
-
-
 def handle_block(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         response_code, redirect_to, the_request, parsed_request = func(self, *args, **kwargs)
+        if response_code == ControllerResponseCode.Failed:
+            return response_code, redirect_to, the_request, parsed_request
+        parsed_request.decision = True
         if response_code == ControllerResponseCode.NotValid:
             parsed_request.host_name = self.kb["blocked_url"]
             parsed_request.path = self.kb["blocked_path"]
             parsed_request.query = ""
+            parsed_request.decision = False
+        db.insert(self._request_data)
         return response_code, redirect_to, the_request, parsed_request
 
     return wrapper
@@ -34,20 +33,25 @@ def modify_response(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         detector_result, redirect_to, the_response = func(self, *args, **kwargs)
-        if detector_result.bit_map == self.kb["clean_bit"] or self.kb["file_type"] not in the_response.headers.get('Content-Type', ""):
+        content_type = the_response.headers.get('Content-Type', "")
+        if self._is_white_content == True and len([i for i in self.kb["white_content_list"] if i in content_type]) != 1:
+            return ControllerResponseCode.Failed, RedirectAnswerTo.Client, None
+        if detector_result.bit_map == self.kb["clean_bit"] or self.kb["file_type"] not in content_type:
             return ControllerResponseCode.Valid, redirect_to, the_response.content
         with open(self.kb["safe_place_path"], "r") as file:
             new_content = file.read()
         to_add = "".join([self.kb["join_format"].format(i) for i in detector_result.detected_alerts])
         if detector_result.csrf_js_files:
-            csrf_js_files = self.kb["csrf_files_alert_format"].format("".join([self.kb["join_format"].format(i) for i in detector_result.csrf_urls]))
+            csrf_js_files = self.kb["csrf_files_alert_format"].format(
+                "".join([self.kb["join_format"].format(i) for i in detector_result.csrf_urls]))
         else:
             csrf_js_files = ""
         new_content = new_content.replace(self.kb["js_file_code"], csrf_js_files)
         new_content = new_content.replace(self.kb["activities_code"], to_add, 1)
         new_content = new_content.replace(self.kb["location_code"], str(self._request.path), 1)
         new_cookie_value = cookies.SimpleCookie()
-        new_cookie_value['Elro-Sec-Bit'] = self.kb["elro_sec_bit_format"].format(self._bit_indicator ^ detector_result.bit_map)
+        new_cookie_value['Elro-Sec-Bit'] = self.kb["elro_sec_bit_format"].format(
+            self._bit_indicator ^ detector_result.bit_map)
         new_cookie_value['Elro-Sec-Bit']['max-age'] = 2592000  # 30 days
         new_content = new_content.replace(self.kb["new_bit_code"], str(new_cookie_value).replace("Set-Cookie:", "", 1))
         send_content = bytes(new_content.encode('utf_8'))
@@ -68,19 +72,20 @@ class ElroController(Controller):
         self._request_data = None
         self.response_cookie = None
         self._bit_indicator = 255
+        self._is_white_content = False
 
     @handle_block
     def request_handler(self, parsed_request, original_request):
-        if original_request.headers.get('sec-fetch-dest', "") in ["script", "style"]:
-            return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         self._request_data = DetectorRequestData(from_ip=parsed_request.from_ip)
         self._request = parsed_request
         session = db.get_session()
         # Get The Server id from DB
-        log("Looking for the server on the DataBase {}".format(parsed_request.host_name), LogLevel.DEBUG, self.request_handler)
+        log("Looking for the server on the DataBase {}".format(parsed_request.host_name), LogLevel.DEBUG,
+            self.request_handler)
         self._server = session.query(Server).filter_by(server_dns=parsed_request.host_name).first()
         if self._server is None:
-            log("Server not found at the DataBase {}".format(parsed_request.host_name), LogLevel.DEBUG, self.request_handler)
+            log("Server not found at the DataBase {}".format(parsed_request.host_name), LogLevel.DEBUG,
+                self.request_handler)
             return ControllerResponseCode.Failed, RedirectAnswerTo.Client, original_request, parsed_request
         # check if authorized requester.
         self._request_data.to_server_id = self._server.item_id
@@ -89,16 +94,18 @@ class ElroController(Controller):
         if is_authorized == IsAuthorized.Yes:
             log("_is_authorized method results is Yes", LogLevel.DEBUG, self.request_handler)
             self._request_data.detected = "white_list"
-            db.insert(self._request_data)
             return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         elif is_authorized == IsAuthorized.No:
             log("_is_authorized method results is No", LogLevel.DEBUG, self.request_handler)
             self._request_data.detected = "black_list"
-            db.insert(self._request_data)
             return ControllerResponseCode.NotValid, RedirectAnswerTo.Client, original_request, parsed_request
         # Get list of detectors for the server
         log("_is_authorized method results is NoConclusions", LogLevel.DEBUG, self.request_handler)
         parsed_request.to_server_id = self._server.item_id
+        if str(original_request.headers.get('sec-fetch-dest', "")) in self.kb["white_content"]:
+            self._is_white_content = True
+            self._request_data.detected = "none"
+            return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
         log("Activate _list_of_detectors method", LogLevel.DEBUG, self.request_handler)
         detectors = self._list_of_detectors(self._server.item_id)
         log("_list_of_detectors results is {}".format(detectors), LogLevel.DEBUG, self.request_handler)
@@ -113,17 +120,15 @@ class ElroController(Controller):
                 self.response_cookie = CookiesToken(dns_name=parsed_request.host_name, ip=parsed_request.from_ip,
                                                     active=True, token=secrets.token_hex(256))
             elif validate:
-                log(" ************* Detector {} is detected unusual activity for {} ************".format(detector.name, original_request.url), LogLevel.INFO, self.request_handler)
+                log(" ************* Detector {} is detected unusual activity for {} ************".format(detector.name,
+                                                                                                         original_request.url),
+                    LogLevel.INFO, self.request_handler)
                 self._request_data.detected = detector.name
                 log("Insert Information to database".format(detector.name), LogLevel.DEBUG, self.request_handler)
-                db.insert(self._request_data)
-                parsed_request.decision = False
                 return ControllerResponseCode.NotValid, RedirectAnswerTo.Client, original_request, parsed_request
         log("Nothing unusual detected by the detectors.", LogLevel.INFO, self.request_handler)
-        parsed_request.decision = True
         self._request_data.detected = "none"
         log("Insert Information to database", LogLevel.DEBUG, self.request_handler)
-        db.insert(self._request_data)
         return ControllerResponseCode.Valid, RedirectAnswerTo.Server, original_request, parsed_request
 
     @modify_response
