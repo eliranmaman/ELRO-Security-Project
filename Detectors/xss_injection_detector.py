@@ -34,15 +34,15 @@ class XSSDetector(Detector):
         # check for xss injection attempts
         for forbidden_word in self.__forbidden:
             try:
-                forbidden_words = re.findall(forbidden_word, parsed_data)
+                forbidden_words = re.findall(forbidden_word, parsed_data_as_str)
                 if len(forbidden_words) > 0:
+                    # if detected a forbidden word it is probably an attack
+                    print("**** FOUND **** " + forbidden_word +" IN ====> " + parsed_data_as_str)
+                    return True
                     # logger.info("Found Threat of XSS ATTACK, Forbidden regex: " + forbidden_word + " was found in: " + parsed_data)
-                    forbidden_word_list.append(forbidden_words)
             except Exception as e:
                 pass
-        # if detected a forbidden word it is probably an attack
-        if len(forbidden_word_list) > 0:
-            return True
+
         return False
 
     # returns the forbidden list
