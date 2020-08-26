@@ -239,6 +239,7 @@ class UpdateServiceStatusHandler(Resource):
             return 0
         update_data = incoming_json['update_data']
         update_data_final = {k: 1 if v == 'True' else 0 for k, v in update_data.items()}
+        log("[API][UpdateServiceStatusHandler] Services update_data_final: {}".format(update_data_final), LogLevel.INFO, self.post)
         sess = db.get_session()
         sess.query(Services).filter(Services.server_id == server.item_id).update(update_data_final)
         sess.commit()
