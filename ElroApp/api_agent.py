@@ -8,6 +8,7 @@ from flask_restful import Resource, Api
 from DBAgent.orm import Users, Services, Server, DetectorRequestData
 from Detectors import UserProtectionDetector
 from Knowledge_Base import log, to_json, LogLevel
+from Parser.parser import HTTPResponseParser
 from config import db, authorized_servers
 
 
@@ -340,7 +341,9 @@ class UserProtectorHandler(Resource):
         except Exception as e:
             log("[API][UserProtectorHandler] Could not get response: {}".format(e), LogLevel.ERROR, self.post)
             return 0
-        upc = UserProtectionDetector(response)
+        parser = HTTPResponseParser(None)
+        parsed_response = parser.parse(response, is_user_protection=True)
+        upc = UserProtectionDetector(parsed_response)
         resp = upc.detect(255)
         return {"alerts": resp.security_alerts}
 

@@ -79,7 +79,7 @@ class HTTPResponseParser(Parser):
         """
         self.__request = request
 
-    def parse(self, data_to_parse):
+    def parse(self, data_to_parse, is_user_protection=False):
         parsed_data = HttpResponse()
         parsed_data.original = data_to_parse
         parsed_data.text = data_to_parse.text
@@ -89,10 +89,11 @@ class HTTPResponseParser(Parser):
         parsed_data.cookies = data_to_parse.cookies
         parsed_data.is_redirect = data_to_parse.is_redirect
         parsed_data.response_url = data_to_parse.url
-        parsed_data.from_server_id = self.__request.to_server_id
-        parsed_data.to_ip = self.__request.from_ip
         parsed_data.time_stamp = datetime.now()
-        parsed_data.from_dns_name = self.__request.host_name
+        if not is_user_protection:
+            parsed_data.from_server_id = self.__request.to_server_id
+            parsed_data.to_ip = self.__request.from_ip
+            parsed_data.from_dns_name = self.__request.host_name
         log("The Parsed data is: {}".format(to_json(parsed_data)), LogLevel.DEBUG, self.parse)
         log("Finish parsing the request.", LogLevel.INFO, self.parse)
         return parsed_data
