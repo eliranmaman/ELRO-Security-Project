@@ -345,7 +345,7 @@ class UserProtectorHandler(Resource):
         parsed_response = parser.parse(response, is_user_protection=True)
         upc = UserProtectionDetector(parsed_response)
         resp = upc.detect(255)
-        return {"alerts": resp.security_alerts}
+        return {"alerts": resp.detected_alerts}
 
 
 api.add_resource(LoginHandler, '/login')
