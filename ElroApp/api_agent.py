@@ -158,8 +158,11 @@ class GetActiveServicesHandler(Resource):
         try:
             joined_statuses = []
             all_servers = db.get_session().query(Server).filter(Server.user_id == user.item_id).all()
+            log("[API][GetActiveServicesHandler] all_servers: {}".format(all_servers), LogLevel.INFO, self.post)
             for server in all_servers:
+                log("[API][GetActiveServicesHandler] server: {}".format(server), LogLevel.INFO, self.post)
                 services = db.get_session().query(Services).filter(Services.server_id == server.item_id).first()
+                log("[API][GetActiveServicesHandler] services: {}".format(services), LogLevel.INFO, self.post)
                 joined_object = {**to_json(services, True), **to_json(server, True)}
                 joined_object['website'] = joined_object['server_dns']
                 del joined_object['server_dns']
