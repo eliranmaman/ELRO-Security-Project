@@ -340,7 +340,7 @@ class UserProtectorHandler(Resource):
             response = requests.get(host_to_detect)
         except Exception as e:
             log("[API][UserProtectorHandler] Could not get response: {}".format(e), LogLevel.ERROR, self.post)
-            return 0
+            return {"alerts": ["We could not process the request, please check that the url is valid."]}
         parser = HTTPResponseParser(None)
         parsed_response = parser.parse(response, is_user_protection=True)
         upc = UserProtectionDetector(parsed_response)
