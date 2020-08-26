@@ -13,8 +13,8 @@ def run():
     args = parser.parse_args()
     username = args.user_name
     user = Users(
-        email="eliran@eliran.com",
-        password="123456",
+        email=username,
+        password=args.password,
         active=True,
         is_admin=True
     )
