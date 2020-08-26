@@ -59,7 +59,7 @@ class LoginHandler(Resource):
         if user is None:
             log("[API][LoginHandler] Could not locate the {} user: ".format(incoming_json['email']), LogLevel.INFO, self.post)
             return 0
-        verify = sha256_crypt.verify(user.password, str(incoming_json['password']))
+        verify = sha256_crypt.verify(str(incoming_json['password']), user.password)
         if verify:
             if user.is_admin == 1:
                 log("[API][LoginHandler] Admin login has occurred: {}".format(incoming_json['email']), LogLevel.INFO, self.post)
