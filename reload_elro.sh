@@ -2,7 +2,6 @@
 
 echo "Restarting services..."
 
-sudo systemctl restart elro
-sudo systemctl restart nginx
+sudo systemctl restart elro, elro_app, nginx
 
 echo "Done!"
