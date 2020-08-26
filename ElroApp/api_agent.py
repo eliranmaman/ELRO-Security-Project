@@ -180,7 +180,7 @@ class GetActiveServicesHandler(Resource):
                     }
                     for key, value in jsoned_services.items()
                 }
-                log("[API][GetActiveServicesHandler] services: {}".format(services), LogLevel.INFO, self.post)
+                log("[API][GetActiveServicesHandler] final_services_json: {}".format(final_services_json), LogLevel.INFO, self.post)
                 joined_object = {**final_services_json, **to_json(server, to_str=True)}
                 joined_object['website'] = joined_object['server_dns']
                 del joined_object['server_dns']
