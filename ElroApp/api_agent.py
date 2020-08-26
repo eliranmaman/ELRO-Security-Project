@@ -242,7 +242,6 @@ class UpdateServiceStatusHandler(Resource):
         sess = db.get_session()
         sess.query(Services).filter(Services.server_id == server.item_id).update(update_data_final)
         sess.commit()
-        sess.close()
         log("[API][UpdateServiceStatusHandler] Services update successfully for: {}".format(server.server_dns), LogLevel.INFO,
             self.post)
         return 1
@@ -264,7 +263,6 @@ class AdminUpdateServiceStatusHandler(Resource):
         sess = db.get_session()
         sess.query(Services).update(update_data)
         sess.commit()
-        sess.close()
         log("[API][AdminUpdateServiceStatusHandler] Date updated: {}".format(incoming_json['update_data']),
             LogLevel.DEBUG, self.post)
         return 1
