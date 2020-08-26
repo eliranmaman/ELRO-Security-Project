@@ -171,7 +171,7 @@ class GetActiveServicesHandler(Resource):
                     return False
                 jsoned_services = to_json(services, ignore_list=["server_id", "user_id", "id", "created_on"], to_str=True)
                 final_services_json = {
-                    value: {
+                    key: {
                         "state": value,
                         "count": db.get_session().query(DetectorRequestData).filter(
                             (user.is_admin or DetectorRequestData.to_server_id == server.item_id)
