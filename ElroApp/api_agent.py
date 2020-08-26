@@ -149,6 +149,12 @@ class GetActiveServicesHandler(Resource):
     @required_authentication
     @only_json
     def post(self):
+        def count_total_records(key):
+            return db.get_session().query(DetectorRequestData).filter_by(detected=key).count()
+
+        def count_server_records(server_id, key):
+            return db.get_session().query(DetectorRequestData).filter_by(detected=key, to_server_id=server_id).count()
+
         incoming_json = request.get_json()
         errors = check_json_object(incoming_json, ["email"], "Could not find {} at the incoming json object.")
         if len(errors) > 0:
@@ -173,10 +179,7 @@ class GetActiveServicesHandler(Resource):
                 final_services_json = {
                     key: {
                         "state": value,
-                        "count": db.get_session().query(DetectorRequestData).filter(
-                            (user.is_admin or DetectorRequestData.to_server_id == server.item_id)
-                            and DetectorRequestData.detected == key
-                        ).count()
+                        "count": count_total_records(key) if user.is_admin else count_server_records(server.item_id, key)
                     }
                     for key, value in jsoned_services.items()
                 }
