@@ -196,7 +196,6 @@ class GetUsersDataHandler(Resource):
 
     @required_authentication
     def post(self):
-        # TODO: Royi I don't have any idea what you try to do here.. fix it.
         all_users = db.get_session().query(Users).all()
         all_servers = db.get_session().query(Server).all()
         all_services = db.get_session().query(Services).all()
@@ -216,11 +215,11 @@ class GetUsersDataHandler(Resource):
         return joined_objects
 
 
-class GetCustomersStatisticsHandler(Resource):
+class TestAPI(Resource):
 
     @required_authentication
     def post(self):
-        return {'bye': 'world'}  # TODO: Royi do we realy need this?!
+        return {'bye': 'world'}
 
 
 class UpdateServiceStatusHandler(Resource):
@@ -348,7 +347,7 @@ api.add_resource(LoginHandler, '/login')
 api.add_resource(RegisterHandler, '/register')
 api.add_resource(GetActiveServicesHandler, '/getActiveServices')
 api.add_resource(GetUsersDataHandler, '/getUsersData')
-api.add_resource(GetCustomersStatisticsHandler, '/getCustomersStatistics')
+api.add_resource(TestAPI, '/TestAPI')
 api.add_resource(UpdateServiceStatusHandler, '/updateServiceStatus')
 api.add_resource(AdminUpdateServiceStatusHandler, '/adminUpdateServiceStatus')
 api.add_resource(AddNewWebsiteHandler, '/addNewWebsite')
