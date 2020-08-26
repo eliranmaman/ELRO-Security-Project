@@ -17,7 +17,7 @@ def to_json(item, ignore_list=None, to_str=False):
     print(item)
     for attr, value in item.__dict__.items():
         print(attr, value)
-        if "_sa_instance_state" in attr or attr in ignore_list:
+        if (type(attr) is str) and ("_sa_instance_state" in attr or attr in ignore_list):
             continue
         json_data[attr] = str(value) if to_str else value
 
