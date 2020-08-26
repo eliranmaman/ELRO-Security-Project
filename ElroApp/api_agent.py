@@ -209,10 +209,10 @@ class GetUsersDataHandler(Resource):
             del current_object["password"]
             for server in all_servers:
                 if server.user_id == user.item_id:
-                    current_object = {**current_object, **to_json(server)}
+                    current_object = {**current_object, **to_json(server, to_str=True)}
                     for service in all_services:
                         if service.server_id == server.item_id:
-                            current_object = {**current_object, **to_json(service)}
+                            current_object = {**current_object, **to_json(service, ignore_list=["server_id", "user_id", "id", "created_on"], to_str=True)}
                             joined_objects.append(current_object)
         log("[API][GetUsersDataHandler] joined_objects: {}".format(joined_objects), LogLevel.DEBUG, self.post)
 
