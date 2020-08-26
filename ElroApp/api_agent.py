@@ -160,7 +160,7 @@ class GetActiveServicesHandler(Resource):
             all_servers = db.get_session().query(Server).filter(Server.user_id == user.item_id).all()
             for server in all_servers:
                 services = db.get_session().query(Services).filter(Services.server_id == server.item_id).first()
-                joined_object = {**to_json(services), **to_json(server)}
+                joined_object = {**to_json(services, True), **to_json(server, True)}
                 joined_object['website'] = joined_object['server_dns']
                 del joined_object['server_dns']
                 joined_statuses.append(joined_object)
