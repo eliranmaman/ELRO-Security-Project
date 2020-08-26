@@ -2,7 +2,7 @@ import json
 import re
 
 from Detectors import Detector
-from Knowledge_Base import Sensitivity, create_content_as_str
+from Knowledge_Base import Sensitivity, create_content_as_str, LogLevel, log
 
 
 class SqlInjection(Detector):
@@ -31,7 +31,7 @@ class SqlInjection(Detector):
         for break_char in self.__break_characters:
             context_breaks = re.findall(break_char, query_string)
             if len(context_breaks) > 0:
-                print("INSIDE LEN > 0")
+                log("INSIDE LEN > 0", LogLevel.INFO, self.detect)
                 final_decision_assurance = self.final_validation(query_string, Sensitivity.VerySensitive)
                 return True if final_decision_assurance >= self.kb["threshold"] else False
 

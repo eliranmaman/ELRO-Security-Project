@@ -1,8 +1,7 @@
-import json
 import re
 
 from Detectors import Detector
-from Knowledge_Base import Sensitivity, create_content_as_str
+from Knowledge_Base import Sensitivity, create_content_as_str, LogLevel, log
 
 
 class XSSDetector(Detector):
@@ -37,10 +36,10 @@ class XSSDetector(Detector):
                 forbidden_words = re.findall(forbidden_word, parsed_data_as_str)
                 if len(forbidden_words) > 0:
                     # if detected a forbidden word it is probably an attack
-                    print("**** FOUND **** " + forbidden_word +" IN ====> " + parsed_data_as_str)
+                    log(" **** FOUND XSS *** {} IN ===> {}".format(forbidden_word, parsed_data_as_str), LogLevel.INFO, self.detect)
                     return True
-                    # logger.info("Found Threat of XSS ATTACK, Forbidden regex: " + forbidden_word + " was found in: " + parsed_data)
             except Exception as e:
+                log("Exception {}".format(e), LogLevel.ERROR, self.detect)
                 pass
 
         return False
