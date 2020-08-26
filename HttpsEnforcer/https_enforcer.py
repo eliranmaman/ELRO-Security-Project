@@ -12,9 +12,6 @@ class HTTPSEnforcer(object):
 
 class HSTS(HTTPSEnforcer):
 
-    def is_connection_secure(self, request):
-        pass
-
     def enforce(self, request_url):
         """
         We will generate new response with HSTS header, and send it to the client.

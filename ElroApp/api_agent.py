@@ -17,7 +17,7 @@ api = Api(app)
 
 
 services_credentials = ["ip", "website", "sql_detector", "bots_detector", "xss_detector", "xml_detector",
-                        "csrf_detector", "cookie_poisoning_detector", "bruteforce_detector"]
+                        "csrf_detector", "bruteforce_detector"]
 
 
 def required_authentication(func):
@@ -77,7 +77,6 @@ def create_services_object(user_id, incoming_json, server_id):
                               xss_detector=int(incoming_json['services']['xss_detector']),
                               xml_detector=int(incoming_json['services']['xml_detector']),
                               csrf_detector=int(incoming_json['services']['csrf_detector']),
-                              cookie_poisoning_detector=int(incoming_json['services']['cookie_poisoning_detector']),
                               bruteforce_detector=int(incoming_json['services']['bruteforce_detector']),
                               server_id=server_id)
     return users_services
