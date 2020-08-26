@@ -5,7 +5,7 @@ import requests
 from flask import Flask, request
 from flask_restful import Resource, Api
 
-from DBAgent.orm import Users, Services, Server
+from DBAgent.orm import Users, Services, Server, DetectorRequestData
 from Detectors import UserProtectionDetector
 from Knowledge_Base import log, to_json, LogLevel
 from config import db, authorized_servers
@@ -155,6 +155,9 @@ class GetActiveServicesHandler(Resource):
             log("[API][GetActiveServicesHandler] Could not process the request: {}".format(errors), LogLevel.INFO, self.post)
             return False
         user = db.get_session().query(Users).filter(Users.email == incoming_json["email"]).first()
+        if user is None:
+            log("[API][GetActiveServicesHandler] Could not find the user in the DB: {}".format(incoming_json["email"]), LogLevel.INFO, self.post)
+            return False
         try:
             joined_statuses = []
             all_servers = db.get_session().query(Server).filter(Server.user_id == user.item_id).all()
@@ -162,8 +165,23 @@ class GetActiveServicesHandler(Resource):
             for server in all_servers:
                 log("[API][GetActiveServicesHandler] server: {}".format(server), LogLevel.INFO, self.post)
                 services = db.get_session().query(Services).filter(Services.server_id == server.item_id).first()
+                if services is None:
+                    log("[API][GetActiveServicesHandler] Could not find the services in the DB: {}".format(
+                        server.server_dns), LogLevel.INFO, self.post)
+                    return False
+                jsoned_services = to_json(services)
+                final_services_json = {
+                    key: {
+                        "state": value,
+                        "count": db.get_session().query(DetectorRequestData).filter(
+                            (user.is_admin or DetectorRequestData.to_server_id == server.item_id)
+                            and DetectorRequestData.detected == key
+                        ).count()
+                    }
+                    for key, value in jsoned_services.items()
+                }
                 log("[API][GetActiveServicesHandler] services: {}".format(services), LogLevel.INFO, self.post)
-                joined_object = {**to_json(services, to_str=True), **to_json(server, to_str=True)}
+                joined_object = {**final_services_json, **to_json(server, to_str=True)}
                 joined_object['website'] = joined_object['server_dns']
                 del joined_object['server_dns']
                 joined_statuses.append(joined_object)
