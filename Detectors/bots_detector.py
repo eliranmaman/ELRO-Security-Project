@@ -51,7 +51,7 @@ class Bots(Detector):
         if is_detected:  # Will save the computing time if its already true
             return True
         is_detected = is_detected or user_agent_data["hardware_type"] in self._forbidden
-        is_detected = is_detected or len([key for key in self.kb["software"] if key in user_agent_data["software"]]) == 0
+        is_detected = is_detected or len([key for key in self.kb["browsers"] if key in user_agent_data["software"]]) == 0
         return is_detected
 
     def __parse_bots_data(self):
