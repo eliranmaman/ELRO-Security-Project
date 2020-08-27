@@ -2,13 +2,14 @@
   "name": "bots_detector",
   "BOTS_URL": "https://api.whatismybrowser.com/api/v2/",
   "BOT_KEY": "0ec00d75e8cca6834999f2820e118da7",
+  "browsers": "Internet Explorer", "Chrome", "Safari", "Edge", "Firefox", "Webkit",
   "bots_detectors": {
     "software_type": null,
     "hardware_type": null,
     "is_weird": false,
     "is_restricted": false,
     "is_spam": false,
-    "is_abusive": false
-
+    "is_abusive": false,
+    "software": null
   }
 }
