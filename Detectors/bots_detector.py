@@ -61,6 +61,7 @@ class Bots(Detector):
         """
         try:
             bots_response = requests.post(self._bots_url, data=json.dumps(self._bots_data), headers=self._bots_header)
+            log("Bots response: {}".format(bots_response), LogLevel.DEBUG, self.__parse_bots_data)
         except Exception as e:
             log(e, LogLevel.ERROR, self.__parse_bots_data)
             # We could not get the data
