@@ -61,7 +61,6 @@ class Bots(Detector):
         """
         try:
             bots_response = requests.post(self._bots_url, data=json.dumps(self._bots_data), headers=self._bots_header)
-            log("Bots response: {}".format(bots_response), LogLevel.DEBUG, self.__parse_bots_data)
         except Exception as e:
             log(e, LogLevel.ERROR, self.__parse_bots_data)
             # We could not get the data
@@ -73,6 +72,7 @@ class Bots(Detector):
             bots_response = json.loads(bots_response.json())
         else:
             bots_response = bots_response.json()
+        log("Bots response: {}".format(bots_response), LogLevel.DEBUG, self.__parse_bots_data)
         if "parse" not in bots_response:
             return Classification.NoConclusion
         # ---- Parse the information ---- #
