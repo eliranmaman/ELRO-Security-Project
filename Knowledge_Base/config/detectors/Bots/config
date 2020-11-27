@@ -1,7 +1,7 @@
 {
   "name": "bots_detector",
   "BOTS_URL": "https://api.whatismybrowser.com/api/v2/",
-  "BOT_KEY": "0ec00d75e8cca6834999f2820e118da7",
+  "BOT_KEY": "super secret key",
   "browsers": ["Internet Explorer", "Chrome", "Safari", "Edge", "Firefox", "Webkit"],
   "bots_detectors": {
     "software_type": null,
