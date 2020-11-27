@@ -4,3 +4,7 @@ test.py
 test2.py
 Proxy/basic_proxy.py
 parsed.csv
+elro.ini
+elro_app.ini
+nginx_default
+reload_elro.sh
