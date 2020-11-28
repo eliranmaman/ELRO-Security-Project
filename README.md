@@ -51,6 +51,13 @@ For the **API** is wsgi_api.py
 
 For the **WAF** (The proxy) is wsgi.py
 
+### The Web Application Interface
+Unfortunately we don't have the budget to maintain server(s) for the WAF or the Web Application Interface of the WAF.
+So You can clone this project and the Web Application Interface project to get you started.
+The Web Application Interface Project is [HERE](https://github.com/royiHamo/ElroWebApp).
+![Drag Racing](docs/WebApplicationInterface.png)
+
+
 ### Default configurations
 Can be changed at Knowledge_Base, each detector has its own config file (should be a JSON format). 
 You can find more details inside every config file.
