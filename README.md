@@ -6,6 +6,8 @@ via a web application interface which makes it accessible for almost everyone re
 
 
 ### Background
+Full project book is [HERE](docs/ELRO-Securiy-Project-Book.pdf).
+
 When we visit a website, there are some concerns about the reliability of the website,
 In fact, we are exposed to a several number of vulnerabilities that we are not aware of.
 
