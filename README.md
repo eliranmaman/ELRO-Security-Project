@@ -1,4 +1,4 @@
-# ELRO-Security (WAF) ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/eliranmaman/WP-exploiter) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/eliranmaman/WP-exploiter/Python%20application/master) ![GitHub top language](https://img.shields.io/github/languages/top/eliranmaman/WP-Exploiter) ![GitHub](https://img.shields.io/github/license/eliranmaman/WP-exploiter) 
+# ELRO-Security (WAF) ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/eliranmaman/ELRO-Security-Project) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/eliranmaman/WP-exploiter/Python%20application/master)  ![GitHub](https://img.shields.io/github/license/eliranmaman/ELRO-Security-Project) 
 ELRO-Security is an advance & free WAF (Web Application Firewall), 
 It is using to defend servers and especially websites around the internet. 
 It is very easy to install and allow websites owner to add their own website 
