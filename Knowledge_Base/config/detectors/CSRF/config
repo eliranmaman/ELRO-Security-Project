@@ -1,11 +1,11 @@
 {
   "name": "csrf_detector",
-  "relevant_header": "Sec-Fetch-Site",
+  "relevant_header": "Sec-Fetch-Site", "": "The relevant header to examine",
   "same_origin": "same-origin",
   "sensitivity": {
     "1": [],
     "2": ["GET"],
     "3": ["POST", "DELETE", "PUT"],
     "else": []
-  }
+  }, "": "Sensitivity check - determinate which method to test for each sensitivity level"
 }

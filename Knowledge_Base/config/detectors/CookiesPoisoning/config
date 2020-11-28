@@ -1,4 +1,4 @@
 {
   "name": "cookie_poisoning_detector",
-  "token_regex": ".*?Elro-Sec-Token=.*\"(.*?)@Elro-Sec-End\";"
+  "token_regex": ".*?Elro-Sec-Token=.*\"(.*?)@Elro-Sec-End\";", "": "Token regex (how to find the token in the cookies)"
 }

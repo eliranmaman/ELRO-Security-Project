@@ -1,8 +1,8 @@
 {
   "name": "proxy_detector",
-  "PROXY_DETECTOR_KEY_URL": "http://proxycheck.io/v2/",
-  "PROXY_DETECTOR_KEY": "super secret key",
-  "PROXY_DETECTOR_FORMAT": "{}{}?key={}",
-  "OK_STATUS": "ok",
-  "YES_STATUS":"yes"
+  "PROXY_DETECTOR_KEY_URL": "http://proxycheck.io/v2/", "": "Detector API url (outsourcing)"
+  "PROXY_DETECTOR_KEY": "super secret key", "": ""API key",
+  "PROXY_DETECTOR_FORMAT": "{}{}?key={}", "": "The API format",
+  "OK_STATUS": "ok", "": "Return answer which represents that the request is legit",
+  "YES_STATUS":"yes", "": "Return answer which represents that the request is via proxy"
 }

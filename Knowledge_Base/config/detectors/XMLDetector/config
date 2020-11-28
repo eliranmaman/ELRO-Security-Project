@@ -1,5 +1,5 @@
 {
   "name": "xml_detector",
-  "forbidden": ["!ENTITY","!ELEMENT","<!ENTITY","<!ELEMENT"],
-  "dangerous": ["\\?XML","ENTITY","%21","%21ENTITY","XXE","XLINK","&XXE","&LT","&GT","XLINK","%3C","%3E"]
+  "forbidden": ["!ENTITY","!ELEMENT","<!ENTITY","<!ELEMENT"], "": "Forbidden patters",
+  "dangerous": ["\\?XML","ENTITY","%21","%21ENTITY","XXE","XLINK","&XXE","&LT","&GT","XLINK","%3C","%3E"], "": "dangerous patterns"
 }

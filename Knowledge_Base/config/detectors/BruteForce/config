@@ -6,6 +6,6 @@
     "2": 15,
     "3": 20,
     "else": 3
-  },
-  "time_interval_in_sec": 60
+  }, "": "Brute-force sensitivity threshold (num of requests)",
+  "time_interval_in_sec": 60, "": "Time interval to examine the number of requests"
 }

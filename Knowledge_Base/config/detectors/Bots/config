@@ -1,8 +1,8 @@
 {
   "name": "bots_detector",
-  "BOTS_URL": "https://api.whatismybrowser.com/api/v2/",
-  "BOT_KEY": "super secret key",
-  "browsers": ["Internet Explorer", "Chrome", "Safari", "Edge", "Firefox", "Webkit"],
+  "BOTS_URL": "https://api.whatismybrowser.com/api/v2/", "": "API to use for detecting bots (outsourcing)",
+  "BOT_KEY": "super secret key", "": "Key for the api",
+  "browsers": ["Internet Explorer", "Chrome", "Safari", "Edge", "Firefox", "Webkit"], "": "Allowed browsers",
   "bots_detectors": {
     "software_type": null,
     "hardware_type": null,
@@ -11,5 +11,5 @@
     "is_spam": false,
     "is_abusive": false,
     "software": null
-  }
+  }, "": "This content is the response from the API, with the default values (we determinate the default values)"
 }
