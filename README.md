@@ -57,7 +57,7 @@ You can find more details inside every config file.
 At the config.py tou will find the necessary configuration for get you started.
 
 ### Further Attacks
-Of course, you can clone & implement other exploits. Our interface is generic and supports several exploiting methods.
+Of course, you can clone & implement other protections or improve the existing one. Our interface is generic and supports several detecting methods.
 
 ### Automation
 ELRO-Security project has the potential to be automated in different ways. 
