@@ -60,8 +60,8 @@ At the config.py tou will find the necessary configuration for get you started.
 Of course, you can clone & implement other exploits. Our interface is generic and supports several exploiting methods.
 
 ### Automation
-WP-Exploiter has the potential to be automated in different ways. We are going to leave this to you. 
-You can find an example at examples/run.py.
+ELRO-Security project has the potential to be automated in different ways. 
+We are going to leave this to you. 
 
 ### Note
 * We do not claim the description or the purpose of this tool to be 100% accurate. If you see anything which is incorrect in this document, please submit a pull request or open a new issue.
